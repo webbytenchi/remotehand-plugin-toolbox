@@ -2,7 +2,7 @@
 
 ## 0.1.0 - Unreleased
 
-Initial RemoteHand Toolbox candidate with 12 curated built-in utilities:
+Initial RemoteHand Toolbox candidate with 11 curated built-in utilities:
 
 - Password Generator
 - Base64 Encode / Decode
@@ -12,9 +12,18 @@ Initial RemoteHand Toolbox candidate with 12 curated built-in utilities:
 - JSON Formatter / Validator
 - Regex Tester
 - Ping
-- Visual Traceroute
+- Traceroute
 - Port Scanner
 - Image Converter
-- Media Downloader
 
 This candidate is for development and manual acceptance testing. It is not a published release.
+
+### Acceptance polish
+
+- Expanded JSON Formatter into a full-height editor/preview workspace with syntax highlighting.
+- Added Regex quick-reference help and loadable examples.
+- Renamed Visual Traceroute to Traceroute.
+- Added Port Scanner presets, known-service legends, comma-separated port lists, and single-address hostname resolution.
+- Added converted-image thumbnails and reveal-in-file-manager actions.
+- Improved spacing between action buttons and result areas.
+- Removed Media Downloader from v0.1.0 to keep Toolbox self-contained and dependency-free for end users.
