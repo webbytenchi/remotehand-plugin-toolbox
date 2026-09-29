@@ -1,3 +1,4 @@
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use md5::Md5;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -5,7 +6,7 @@ use sha1::Sha1;
 use sha2::{Digest, Sha256, Sha512};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::File;
-use std::io::{self, ErrorKind, Read, Write};
+use std::io::{self, Cursor, ErrorKind, Read, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -123,24 +124,6 @@ struct PortScanControl {
 struct PortScanManager {
     next_id: AtomicU64,
     jobs: Mutex<BTreeMap<u64, Arc<PortScanControl>>>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct MediaJobSnapshot {
-    id: u64,
-    state: String,
-    mode: String,
-    url: String,
-    output_dir: String,
-    message: String,
-    error: Option<String>,
-}
-
-#[derive(Default)]
-struct MediaJobManager {
-    next_id: AtomicU64,
-    jobs: Mutex<BTreeMap<u64, Arc<Mutex<MediaJobSnapshot>>>>,
 }
 
 fn write_frame<W: Write, T: Serialize>(writer: &mut W, value: &T) -> Result<(), String> {
@@ -276,28 +259,40 @@ fn hash_file(path: &Path, algorithm: &str) -> Result<String, String> {
 fn parse_ports(input: &str) -> Result<Vec<u16>, String> {
     let text = input.trim();
     if text.is_empty() {
-        return Err("port or port range is required".to_string());
+        return Err("port, port range, or comma-separated port list is required".to_string());
     }
-    if let Some((start, end)) = text.split_once('-') {
-        let start: u16 = start.trim().parse().map_err(|_| "invalid start port".to_string())?;
-        let end: u16 = end.trim().parse().map_err(|_| "invalid end port".to_string())?;
-        if start == 0 || end == 0 || start > end {
-            return Err("port range must be between 1 and 65535 with start <= end".to_string());
-        }
-        let count = usize::from(end - start) + 1;
-        if count > MAX_SCAN_PORTS {
-            return Err(format!("port range is limited to {MAX_SCAN_PORTS} ports per scan"));
-        }
-        Ok((start..=end).collect())
-    } else {
-        let port: u16 = text.parse().map_err(|_| "invalid port".to_string())?;
-        if port == 0 {
-            return Err("port must be between 1 and 65535".to_string());
-        }
-        Ok(vec![port])
-    }
-}
 
+    let mut ports = BTreeSet::new();
+    for part in text.split(',') {
+        let part = part.trim();
+        if part.is_empty() {
+            return Err("port list contains an empty item".to_string());
+        }
+        if let Some((start, end)) = part.split_once('-') {
+            let start: u16 = start.trim().parse().map_err(|_| format!("invalid start port: {part}"))?;
+            let end: u16 = end.trim().parse().map_err(|_| format!("invalid end port: {part}"))?;
+            if start == 0 || end == 0 || start > end {
+                return Err("port ranges must be between 1 and 65535 with start <= end".to_string());
+            }
+            for port in start..=end {
+                ports.insert(port);
+                if ports.len() > MAX_SCAN_PORTS {
+                    return Err(format!("scan is limited to {MAX_SCAN_PORTS} unique ports"));
+                }
+            }
+        } else {
+            let port: u16 = part.parse().map_err(|_| format!("invalid port: {part}"))?;
+            if port == 0 {
+                return Err("ports must be between 1 and 65535".to_string());
+            }
+            ports.insert(port);
+            if ports.len() > MAX_SCAN_PORTS {
+                return Err(format!("scan is limited to {MAX_SCAN_PORTS} unique ports"));
+            }
+        }
+    }
+    Ok(ports.into_iter().collect())
+}
 fn ipv4_to_u32(ip: Ipv4Addr) -> u32 {
     u32::from_be_bytes(ip.octets())
 }
@@ -343,23 +338,22 @@ fn resolve_targets(input: &str) -> Result<Vec<IpAddr>, String> {
     if let Ok(ip) = text.parse::<IpAddr>() {
         return Ok(vec![ip]);
     }
+
     let resolved = (text, 0)
         .to_socket_addrs()
-        .map_err(|error| format!("cannot resolve {text}: {error}"))?;
-    let mut unique = BTreeSet::new();
-    for address in resolved {
-        unique.insert(address.ip());
-        if unique.len() >= 16 {
-            break;
-        }
-    }
-    if unique.is_empty() {
-        Err(format!("{text} did not resolve to an IP address"))
-    } else {
-        Ok(unique.into_iter().collect())
-    }
-}
+        .map_err(|error| format!("cannot resolve {text}: {error}"))?
+        .map(|address| address.ip())
+        .collect::<Vec<_>>();
 
+    let selected = resolved
+        .iter()
+        .copied()
+        .find(IpAddr::is_ipv4)
+        .or_else(|| resolved.first().copied())
+        .ok_or_else(|| format!("{text} did not resolve to an IP address"))?;
+
+    Ok(vec![selected])
+}
 impl PortScanManager {
     fn start(&self, target_input: String, port_input: String, timeout_ms: u64) -> Result<PortScanSnapshot, String> {
         let targets = resolve_targets(&target_input)?;
@@ -563,101 +557,38 @@ fn convert_image(input: &Path, output: &Path, format: &str) -> Result<(), String
         .map_err(|error| format!("cannot save {}: {error}", output.to_string_lossy()))
 }
 
-fn executable_version(program: &str, args: &[&str]) -> Option<String> {
-    let output = Command::new(program).args(args).output().ok()?;
-    if !output.status.success() {
-        return None;
-    }
-    let text = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    if text.is_empty() { None } else { Some(text.lines().next().unwrap_or_default().to_string()) }
+fn image_preview_data(path: &Path) -> Result<String, String> {
+    let image = image::open(path)
+        .map_err(|error| format!("cannot preview {}: {error}", path.to_string_lossy()))?
+        .thumbnail(360, 360);
+    let mut cursor = Cursor::new(Vec::new());
+    image
+        .write_to(&mut cursor, image::ImageFormat::Png)
+        .map_err(|error| format!("cannot encode preview: {error}"))?;
+    Ok(format!("data:image/png;base64,{}", BASE64.encode(cursor.into_inner())))
 }
 
-fn validate_media_url(url: &str) -> Result<&str, String> {
-    let value = url.trim();
-    if value.len() > 4096 || !(value.starts_with("https://") || value.starts_with("http://")) {
-        return Err("media URL must be an http:// or https:// URL".to_string());
+fn reveal_file(path: &Path) -> Result<(), String> {
+    if !path.is_file() {
+        return Err("generated file no longer exists".to_string());
     }
-    Ok(value)
-}
-
-impl MediaJobManager {
-    fn start(&self, url: String, mode: String, output_dir: String) -> Result<MediaJobSnapshot, String> {
-        validate_media_url(&url)?;
-        if !matches!(mode.as_str(), "video" | "audio") {
-            return Err("media mode must be video or audio".to_string());
-        }
-        let output_path = PathBuf::from(output_dir.trim());
-        if !output_path.is_dir() {
-            return Err("output directory does not exist".to_string());
-        }
-        if executable_version("yt-dlp", &["--version"]).is_none() {
-            return Err("yt-dlp was not found in PATH".to_string());
-        }
-
-        let id = self.next_id.fetch_add(1, Ordering::Relaxed).saturating_add(1);
-        let snapshot = MediaJobSnapshot {
-            id,
-            state: "running".to_string(),
-            mode: mode.clone(),
-            url: url.clone(),
-            output_dir: output_path.to_string_lossy().into_owned(),
-            message: "Download started".to_string(),
-            error: None,
-        };
-        let job = Arc::new(Mutex::new(snapshot.clone()));
-        self.jobs
-            .lock()
-            .map_err(|_| "media job store lock poisoned".to_string())?
-            .insert(id, Arc::clone(&job));
-
-        thread::spawn(move || {
-            let template = output_path.join("%(title)s.%(ext)s");
-            let mut command = Command::new("yt-dlp");
-            command.arg("--no-playlist").arg("--newline");
-            if mode == "audio" {
-                command.args(["-x", "--audio-format", "mp3"]);
-            } else {
-                command.args(["-f", "bv*+ba/b", "--merge-output-format", "mp4"]);
-            }
-            command.arg("-o").arg(template).arg(url);
-            let outcome = command.output();
-
-            if let Ok(mut state) = job.lock() {
-                match outcome {
-                    Ok(output) if output.status.success() => {
-                        state.state = "completed".to_string();
-                        state.message = "Download completed".to_string();
-                    }
-                    Ok(output) => {
-                        state.state = "failed".to_string();
-                        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-                        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                        state.error = Some(if !stderr.is_empty() { stderr } else if !stdout.is_empty() { stdout } else { format!("yt-dlp failed with {}", output.status) });
-                        state.message = "Download failed".to_string();
-                    }
-                    Err(error) => {
-                        state.state = "failed".to_string();
-                        state.error = Some(error.to_string());
-                        state.message = "Download failed".to_string();
-                    }
-                }
-            }
-        });
-
-        Ok(snapshot)
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("explorer.exe")
+            .arg("/select,")
+            .arg(path)
+            .spawn()
+            .map_err(|error| format!("cannot open File Explorer: {error}"))?;
+        Ok(())
     }
-
-    fn get(&self, id: u64) -> Result<MediaJobSnapshot, String> {
-        let job = self
-            .jobs
-            .lock()
-            .map_err(|_| "media job store lock poisoned".to_string())?
-            .get(&id)
-            .cloned()
-            .ok_or_else(|| format!("media job {id} was not found"))?;
-        job.lock()
-            .map(|state| state.clone())
-            .map_err(|_| "media job state lock poisoned".to_string())
+    #[cfg(not(target_os = "windows"))]
+    {
+        let parent = path.parent().unwrap_or_else(|| Path::new("."));
+        Command::new("xdg-open")
+            .arg(parent)
+            .spawn()
+            .map_err(|error| format!("cannot open file manager: {error}"))?;
+        Ok(())
     }
 }
 
@@ -672,7 +603,6 @@ fn dispatch(
     request: &HostRequest,
     host_call: &mut dyn FnMut(&str, Value) -> Result<Value, String>,
     scans: &PortScanManager,
-    media: &MediaJobManager,
 ) -> Result<Value, String> {
     match request.method.as_str() {
         "runtime.ping" => Ok(json!({
@@ -727,8 +657,10 @@ fn dispatch(
                 .get("path")
                 .and_then(Value::as_str)
                 .ok_or_else(|| "host file.save did not return a path".to_string())?;
-            convert_image(&input, Path::new(output), &params.format)?;
-            Ok(json!({ "saved": true, "path": output }))
+            let output_path = Path::new(output);
+            convert_image(&input, output_path, &params.format)?;
+            let preview = image_preview_data(output_path)?;
+            Ok(json!({ "saved": true, "path": output, "preview": preview }))
         }
         "network.ping" => {
             let target = request.params.get("target").and_then(Value::as_str)
@@ -759,23 +691,11 @@ fn dispatch(
                 .ok_or_else(|| "port.cancel requires id".to_string())?;
             Ok(serde_json::to_value(scans.cancel(id)?).map_err(|error| error.to_string())?)
         }
-        "media.requirements" => Ok(json!({
-            "ytDlp": executable_version("yt-dlp", &["--version"]),
-            "ffmpeg": executable_version("ffmpeg", &["-version"])
-        })),
-        "media.start" => {
-            #[derive(Deserialize)]
-            #[serde(rename_all = "camelCase")]
-            struct Params { url: String, mode: String, output_dir: String }
-            let params: Params = serde_json::from_value(request.params.clone())
-                .map_err(|error| format!("invalid media.start request: {error}"))?;
-            Ok(serde_json::to_value(media.start(params.url, params.mode, params.output_dir)?)
-                .map_err(|error| error.to_string())?)
-        }
-        "media.status" => {
-            let id = request.params.get("id").and_then(Value::as_u64)
-                .ok_or_else(|| "media.status requires id".to_string())?;
-            Ok(serde_json::to_value(media.get(id)?).map_err(|error| error.to_string())?)
+        "image.reveal" => {
+            let path = request.params.get("path").and_then(Value::as_str)
+                .ok_or_else(|| "image.reveal requires path".to_string())?;
+            reveal_file(Path::new(path))?;
+            Ok(json!({ "opened": true }))
         }
         method => Err(format!("unsupported plugin method: {method}")),
     }
@@ -787,7 +707,6 @@ fn run() -> Result<(), String> {
     let mut stdin = io::stdin().lock();
     let mut stdout = io::stdout().lock();
     let scans = PortScanManager::default();
-    let media = MediaJobManager::default();
 
     write_frame(
         &mut stdout,
@@ -826,7 +745,7 @@ fn run() -> Result<(), String> {
                 params,
             )
         };
-        let (ok, result, error) = match dispatch(&request, &mut host_call, &scans, &media) {
+        let (ok, result, error) = match dispatch(&request, &mut host_call, &scans) {
             Ok(result) => (true, result, String::new()),
             Err(error) => (false, Value::Null, error),
         };
@@ -867,6 +786,8 @@ mod tests {
     fn parses_single_and_range_ports() {
         assert_eq!(parse_ports("443").unwrap(), vec![443]);
         assert_eq!(parse_ports("80-82").unwrap(), vec![80, 81, 82]);
+        assert_eq!(parse_ports("22,80,443").unwrap(), vec![22, 80, 443]);
+        assert_eq!(parse_ports("80,443,8000-8002").unwrap(), vec![80, 443, 8000, 8001, 8002]);
         assert!(parse_ports("0").is_err());
         assert!(parse_ports("90-80").is_err());
     }
@@ -902,12 +823,6 @@ mod tests {
         assert_eq!(image_format("jpeg").unwrap().1, "jpg");
         assert_eq!(image_format("webp").unwrap().1, "webp");
         assert!(image_format("tiff").is_err());
-    }
-
-    #[test]
-    fn media_url_requires_http() {
-        assert!(validate_media_url("https://example.com/video").is_ok());
-        assert!(validate_media_url("file:///tmp/video").is_err());
     }
 
     #[test]
