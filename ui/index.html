@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RemoteHand Toolbox</title>
+<style>
+*{box-sizing:border-box}
+:root{color-scheme:dark}
+html,body{margin:0;min-width:0;min-height:100%;background:var(--remotehand-background,#11151a);color:var(--remotehand-text,#e7edf5)}
+body{font-family:var(--remotehand-ui-font-family,Inter,ui-sans-serif,system-ui,sans-serif);font-size:var(--remotehand-ui-font-size,13px)}
+button,input,select,textarea{font:inherit}
+button{min-height:34px;border:1px solid var(--remotehand-border,#33404d);border-radius:8px;background:var(--remotehand-button-background,#202833);color:var(--remotehand-text,#eef3f8);padding:6px 11px;cursor:pointer}
+button:hover:not(:disabled){background:var(--remotehand-button-hover,#2a3542)}
+button:disabled{opacity:.45;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.tool-card:focus-visible{outline:2px solid var(--remotehand-accent-border,#6f9bc8);outline-offset:2px}
+.primary{background:var(--remotehand-accent-surface,#17324d);border-color:var(--remotehand-accent-border,#5d86b3);color:var(--remotehand-accent-text,var(--remotehand-text,#eef6ff))}
+.danger{border-color:#844853;color:#f0a8b0}.ghost{background:transparent}
+input,select,textarea{border:1px solid var(--remotehand-border,#34414d);border-radius:8px;background:var(--remotehand-input-background,#0f151b);color:var(--remotehand-text,#edf3f8);padding:8px 10px;min-width:0}
+textarea{resize:vertical;width:100%;min-height:120px;font-family:var(--remotehand-terminal-font-family,Consolas,monospace);line-height:1.45}
+input[type=checkbox]{accent-color:var(--remotehand-accent,#70a7e8)}
+input[type=range]{padding:0;border:0;background:transparent;accent-color:var(--remotehand-accent,#70a7e8)}
+[hidden]{display:none!important}
+.app-shell{min-height:100%;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--remotehand-border,#2b3540);background:var(--remotehand-surface,#171d24);position:sticky;top:0;z-index:5}
+.topbar h1{margin:1px 0 0;font-size:18px}.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--remotehand-muted-text,#8c99a8)}
+.view{padding:18px;min-width:0}.intro{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}.intro h2{margin:0 0 5px;font-size:22px}.intro p{margin:0;color:var(--remotehand-muted-text,#9ba8b7)}
+.badge{border:1px solid var(--remotehand-border,#3a4754);border-radius:999px;padding:5px 9px;color:var(--remotehand-muted-text,#a3afbb);white-space:nowrap}
+.category{margin:20px 0 10px}.category:first-of-type{margin-top:0}.category h3{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--remotehand-muted-text,#8e9ba9)}
+.tool-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.tool-card{display:grid;grid-template-columns:44px minmax(0,1fr);gap:11px;align-items:start;min-height:112px;padding:13px;border:1px solid var(--remotehand-border,#303b46);border-radius:12px;background:var(--remotehand-surface,#171d24);cursor:pointer}
+.tool-card:hover{border-color:var(--remotehand-accent-border,#557da4);background:var(--remotehand-surface-hover,#1a222b)}
+.tool-icon{width:44px;height:44px;border:1px solid var(--remotehand-border,#354351);border-radius:10px;background:var(--remotehand-terminal-background,#10151b);display:grid;place-items:center;font:700 18px var(--remotehand-terminal-font-family,Consolas,monospace);color:var(--remotehand-accent-text,#9bc3e8)}
+.tool-card h4{margin:2px 0 5px;font-size:15px}.tool-card p{margin:0;color:var(--remotehand-muted-text,#9ba8b7);line-height:1.4}
+.tool-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--remotehand-border,#2d3843)}
+.tool-head h2{margin:0 0 4px;font-size:20px}.tool-head p{margin:0;color:var(--remotehand-muted-text,#9aa7b5)}
+.panel{border:1px solid var(--remotehand-border,#303b46);border-radius:12px;background:var(--remotehand-surface,#171d24);padding:14px;margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.field{display:grid;gap:6px}.field>span,.label{color:var(--remotehand-muted-text,#9ba8b7);font-size:11px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{min-width:0}
+.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.output{white-space:pre-wrap;word-break:break-word;min-height:72px;padding:11px;border:1px solid var(--remotehand-border,#293541);border-radius:9px;background:var(--remotehand-terminal-background,#0d1318);font-family:var(--remotehand-terminal-font-family,Consolas,monospace);line-height:1.5;overflow:auto}
+.output.tall{max-height:420px}.result-line{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;padding:7px 0;border-bottom:1px solid var(--remotehand-border,#27323c)}.result-line:last-child{border-bottom:0}
+.status{margin-top:10px;color:var(--remotehand-muted-text,#98a5b3)}.status.error{color:#e899a2}.status.success{color:#91cfaa}
+.checks{display:flex;gap:14px;flex-wrap:wrap}.checks label{display:flex;align-items:center;gap:6px}
+.password-output{font-size:16px;min-height:auto}
+.progress{height:8px;border-radius:999px;background:var(--remotehand-terminal-background,#0e141a);overflow:hidden;border:1px solid var(--remotehand-border,#2d3945);margin-top:10px}.progress>div{height:100%;width:0;background:var(--remotehand-accent,#70a7e8);transition:width .15s}
+.hops{display:grid;gap:6px}.hop{display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--remotehand-border,#2c3742);border-radius:8px;background:var(--remotehand-terminal-background,#10161c)}.hop strong{text-align:center;color:var(--remotehand-accent-text,#9ec7ea)}.hop span{font-family:var(--remotehand-terminal-font-family,Consolas,monospace);white-space:pre-wrap}
+.match{padding:8px 0;border-bottom:1px solid var(--remotehand-border,#29343f)}.match:last-child{border-bottom:0}.match code{color:var(--remotehand-accent-text,#9ec7ea)}
+.file-path{word-break:break-all;color:var(--remotehand-muted-text,#a1adba);font-family:var(--remotehand-terminal-font-family,Consolas,monospace)}
+small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a4);line-height:1.45}
+@media(max-width:900px){.tool-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-3{grid-template-columns:1fr}}
+@media(max-width:620px){.view{padding:12px}.topbar{padding:10px 12px}.intro{flex-direction:column}.tool-grid,.grid-2{grid-template-columns:1fr}.tool-card{min-height:96px}.tool-head{flex-direction:column}.tool-head button{align-self:flex-start}}
+</style>
+</head>
+<body>
+<div class="app-shell">
+<header class="topbar">
+  <div><div class="eyebrow">RemoteHand Plugin</div><h1 id="viewTitle">Toolbox</h1></div>
+  <button id="backBtn" class="ghost" type="button" hidden>← Toolbox</button>
+</header>
+
+<main id="homeView" class="view">
+  <section class="intro">
+    <div><h2>RemoteHand Toolbox</h2><p>Useful everyday, developer, network, image, and media utilities in one place.</p></div>
+    <span class="badge">12 built-in tools</span>
+  </section>
+
+  <section class="category"><h3>Generators</h3></section>
+  <section class="tool-grid">
+    <article class="tool-card" data-tool="password" tabindex="0"><div class="tool-icon">Aa</div><div><h4>Password Generator</h4><p>Create secure random passwords with configurable character sets.</p></div></article>
+  </section>
+
+  <section class="category"><h3>Encoding &amp; Data</h3></section>
+  <section class="tool-grid">
+    <article class="tool-card" data-tool="base64" tabindex="0"><div class="tool-icon">64</div><div><h4>Base64</h4><p>Encode or decode UTF-8 text with Base64.</p></div></article>
+    <article class="tool-card" data-tool="url" tabindex="0"><div class="tool-icon">%</div><div><h4>URL Encode / Decode</h4><p>Escape or restore URL components safely.</p></div></article>
+    <article class="tool-card" data-tool="hash" tabindex="0"><div class="tool-icon">#</div><div><h4>Hash / Checksum</h4><p>Hash text or files with MD5, SHA-1, SHA-256, or SHA-512.</p></div></article>
+    <article class="tool-card" data-tool="timestamp" tabindex="0"><div class="tool-icon">⏱</div><div><h4>Timestamp / Unix Epoch</h4><p>Convert dates to Unix time and Unix time back to local or UTC dates.</p></div></article>
+    <article class="tool-card" data-tool="json" tabindex="0"><div class="tool-icon">{}</div><div><h4>JSON Formatter / Validator</h4><p>Validate, pretty-print, or compact JSON.</p></div></article>
+    <article class="tool-card" data-tool="regex" tabindex="0"><div class="tool-icon">.*</div><div><h4>Regex Tester</h4><p>Test JavaScript-compatible regular expressions and inspect matches.</p></div></article>
+  </section>
+
+  <section class="category"><h3>Network</h3></section>
+  <section class="tool-grid">
+    <article class="tool-card" data-tool="ping" tabindex="0"><div class="tool-icon">↔</div><div><h4>Ping</h4><p>Check reachability and latency using the operating system ping utility.</p></div></article>
+    <article class="tool-card" data-tool="traceroute" tabindex="0"><div class="tool-icon">⇢</div><div><h4>Visual Traceroute</h4><p>Trace network hops and display the route as a readable hop list.</p></div></article>
+    <article class="tool-card" data-tool="ports" tabindex="0"><div class="tool-icon">::</div><div><h4>Port Scanner</h4><p>Scan one host/IP or an IPv4 range against one port or a port range.</p></div></article>
+  </section>
+
+  <section class="category"><h3>Image &amp; Media</h3></section>
+  <section class="tool-grid">
+    <article class="tool-card" data-tool="image" tabindex="0"><div class="tool-icon">▧</div><div><h4>Image Converter</h4><p>Convert PNG, JPG, WebP, BMP, GIF, and ICO images to common formats.</p></div></article>
+    <article class="tool-card" data-tool="media" tabindex="0"><div class="tool-icon">▶</div><div><h4>Media Downloader</h4><p>Download authorized video or audio using yt-dlp.</p></div></article>
+  </section>
+</main>
+
+<main id="toolView" class="view" hidden>
+  <section class="tool-head">
+    <div><h2 id="toolTitle"></h2><p id="toolDescription"></p></div>
+  </section>
+  <div id="toolBody"></div>
+</main>
+</div>
+
+<template id="passwordTemplate">
+  <section class="panel">
+    <div class="grid-2">
+      <label class="field"><span>Length</span><div class="row"><input id="pwLength" type="range" min="8" max="128" value="24"><strong id="pwLengthValue">24</strong></div></label>
+      <div class="field"><span>Character sets</span><div class="checks"><label><input id="pwLower" type="checkbox" checked> a-z</label><label><input id="pwUpper" type="checkbox" checked> A-Z</label><label><input id="pwNumber" type="checkbox" checked> 0-9</label><label><input id="pwSymbol" type="checkbox" checked> Symbols</label></div></div>
+    </div>
+    <div class="actions"><button id="pwGenerate" class="primary" type="button">Generate</button></div>
+    <div id="pwOutput" class="output password-output"></div>
+    <div id="pwStatus" class="status"></div>
+  </section>
+</template>
+
+<template id="base64Template">
+  <section class="panel"><label class="field"><span>Input</span><textarea id="b64Input"></textarea></label><div class="actions"><button id="b64Encode" class="primary">Encode</button><button id="b64Decode">Decode</button><button id="b64Swap">Use output as input</button></div><label class="field" style="margin-top:12px"><span>Output</span><textarea id="b64Output" readonly></textarea></label><div id="b64Status" class="status"></div></section>
+</template>
+
+<template id="urlTemplate">
+  <section class="panel"><label class="field"><span>Input</span><textarea id="urlInput"></textarea></label><div class="actions"><button id="urlEncode" class="primary">Encode</button><button id="urlDecode">Decode</button><button id="urlSwap">Use output as input</button></div><label class="field" style="margin-top:12px"><span>Output</span><textarea id="urlOutput" readonly></textarea></label><div id="urlStatus" class="status"></div></section>
+</template>
+
+<template id="hashTemplate">
+  <section class="panel">
+    <div class="row"><label class="field"><span>Algorithm</span><select id="hashAlgorithm"><option>SHA-256</option><option>SHA-512</option><option>SHA-1</option><option>MD5</option></select></label></div>
+    <label class="field" style="margin-top:12px"><span>Text</span><textarea id="hashText" placeholder="Enter text to hash"></textarea></label>
+    <div class="actions"><button id="hashTextBtn" class="primary">Hash text</button><button id="hashFileBtn">Choose file…</button></div>
+    <div id="hashFilePath" class="file-path"></div><div id="hashOutput" class="output"></div><div id="hashStatus" class="status"></div>
+  </section>
+</template>
+
+<template id="timestampTemplate">
+  <section class="panel">
+    <div class="grid-2">
+      <label class="field"><span>Date / time</span><input id="timeDate" type="datetime-local" step="1"></label>
+      <label class="field"><span>Unix timestamp</span><input id="timeEpoch" type="text" inputmode="numeric" placeholder="Seconds or milliseconds"></label>
+    </div>
+    <div class="actions"><button id="dateToEpoch" class="primary">Date → Unix</button><button id="epochToDate">Unix → Date</button><button id="timeNow">Now</button></div>
+    <div id="timeOutput" class="output"></div><div id="timeStatus" class="status"></div>
+  </section>
+</template>
+
+<template id="jsonTemplate">
+  <section class="panel"><label class="field"><span>JSON</span><textarea id="jsonInput" style="min-height:220px"></textarea></label><div class="actions"><button id="jsonFormat" class="primary">Format</button><button id="jsonCompact">Compact</button><button id="jsonValidate">Validate</button></div><div id="jsonStatus" class="status"></div></section>
+</template>
+
+<template id="regexTemplate">
+  <section class="panel">
+    <div class="grid-2"><label class="field"><span>Pattern</span><input id="regexPattern" type="text" placeholder="e.g. \b\w+@\w+\.\w+\b"></label><label class="field"><span>Flags</span><input id="regexFlags" type="text" value="gi" placeholder="gimsuy"></label></div>
+    <label class="field" style="margin-top:12px"><span>Test text</span><textarea id="regexText"></textarea></label><div class="actions"><button id="regexRun" class="primary">Test regex</button></div><div id="regexOutput" class="output"></div><div id="regexStatus" class="status"></div>
+  </section>
+</template>
+
+<template id="pingTemplate">
+  <section class="panel"><label class="field"><span>Host or IP</span><input id="pingTarget" type="text" placeholder="example.com or 192.168.1.1"></label><div class="actions"><button id="pingRun" class="primary">Ping</button></div><div id="pingOutput" class="output tall"></div><div id="pingStatus" class="status"></div></section>
+</template>
+
+<template id="tracerouteTemplate">
+  <section class="panel"><label class="field"><span>Host or IP</span><input id="traceTarget" type="text" placeholder="example.com or 1.1.1.1"></label><div class="actions"><button id="traceRun" class="primary">Trace route</button></div><div id="traceHops" class="hops" style="margin-top:12px"></div><details style="margin-top:12px"><summary>Raw output</summary><div id="traceRaw" class="output tall" style="margin-top:8px"></div></details><div id="traceStatus" class="status"></div></section>
+</template>
+
+<template id="portsTemplate">
+  <section class="panel">
+    <div class="grid-3">
+      <label class="field"><span>Target</span><input id="portTarget" type="text" placeholder="192.168.1.10 or 192.168.1.10-192.168.1.50"></label>
+      <label class="field"><span>Port / range</span><input id="portPorts" type="text" value="1-1024" placeholder="443 or 1-1024"></label>
+      <label class="field"><span>Timeout per attempt (ms)</span><input id="portTimeout" type="number" min="50" max="5000" value="350"></label>
+    </div>
+    <div class="actions"><button id="portStart" class="primary">Start scan</button><button id="portCancel" class="danger" hidden>Cancel</button></div>
+    <div class="progress"><div id="portProgress"></div></div><div id="portSummary" class="status"></div><div id="portOutput" class="output tall"></div>
+    <small class="note">IP ranges use full IPv4 addresses on both sides. v0.1.0 limits one scan to 256 targets, 4,096 ports, and 131,072 total connection attempts.</small>
+  </section>
+</template>
+
+<template id="imageTemplate">
+  <section class="panel">
+    <div class="grid-2"><div class="field"><span>Input image</span><div id="imagePath" class="file-path">No file selected</div></div><label class="field"><span>Output format</span><select id="imageFormat"><option value="png">PNG</option><option value="jpg">JPG</option><option value="webp">WebP</option><option value="bmp">BMP</option><option value="ico">ICO</option></select></label></div>
+    <div class="actions"><button id="imagePick">Choose image…</button><button id="imageConvert" class="primary" disabled>Convert &amp; Save…</button></div><div id="imageStatus" class="status"></div>
+    <small class="note">GIF input is supported as a static image conversion. Animated GIF editing is outside the v0.1.0 scope.</small>
+  </section>
+</template>
+
+<template id="mediaTemplate">
+  <section class="panel">
+    <div class="grid-2"><label class="field"><span>Media URL</span><input id="mediaUrl" type="url" placeholder="https://…"></label><label class="field"><span>Mode</span><select id="mediaMode"><option value="video">Video (best, MP4 merge)</option><option value="audio">Audio only (MP3)</option></select></label></div>
+    <label class="field" style="margin-top:12px"><span>Output directory</span><input id="mediaDir" type="text" placeholder="C:\Users\You\Downloads"></label>
+    <div class="actions"><button id="mediaStart" class="primary">Download</button><button id="mediaCheck">Check requirements</button></div>
+    <div id="mediaOutput" class="output"></div><div id="mediaStatus" class="status"></div>
+    <small class="note">Media Downloader uses yt-dlp from PATH. FFmpeg is recommended for best-quality video merging and is required for MP3 extraction. Download only media you are authorized to save.</small>
+  </section>
+</template>
+
+<script>
+(() => {
+"use strict";
+
+const rawRequest = (method, params = null) => window.remotehand.request(method, params);
+let requestQueue = Promise.resolve();
+const request = (method, params = null) => {
+  const run = () => rawRequest(method, params);
+  const result = requestQueue.then(run, run);
+  requestQueue = result.catch(() => {});
+  return result;
+};
+
+const homeView = document.getElementById("homeView");
+const toolView = document.getElementById("toolView");
+const toolTitle = document.getElementById("toolTitle");
+const toolDescription = document.getElementById("toolDescription");
+const toolBody = document.getElementById("toolBody");
+const backBtn = document.getElementById("backBtn");
+const viewTitle = document.getElementById("viewTitle");
+let cleanupCurrent = () => {};
+
+const tools = {
+  password: { title:"Password Generator", description:"Create cryptographically random passwords with your preferred character sets.", template:"passwordTemplate", init:initPassword },
+  base64: { title:"Base64 Encode / Decode", description:"Encode and decode UTF-8 text using Base64.", template:"base64Template", init:initBase64 },
+  url: { title:"URL Encode / Decode", description:"Encode or decode URL components.", template:"urlTemplate", init:initUrl },
+  hash: { title:"Hash / Checksum", description:"Calculate MD5, SHA-1, SHA-256, or SHA-512 for text and files.", template:"hashTemplate", init:initHash },
+  timestamp: { title:"Timestamp / Unix Epoch", description:"Convert local dates and Unix timestamps in seconds or milliseconds.", template:"timestampTemplate", init:initTimestamp },
+  json: { title:"JSON Formatter / Validator", description:"Validate, pretty-print, or compact JSON.", template:"jsonTemplate", init:initJson },
+  regex: { title:"Regex Tester", description:"Run JavaScript-compatible regular expressions against sample text.", template:"regexTemplate", init:initRegex },
+  ping: { title:"Ping", description:"Check target reachability with the operating system ping command.", template:"pingTemplate", init:initPing },
+  traceroute: { title:"Visual Traceroute", description:"Trace network hops and display the route in a compact hop view.", template:"tracerouteTemplate", init:initTraceroute },
+  ports: { title:"Port Scanner", description:"Scan a single host/IP or IPv4 range against a single port or port range.", template:"portsTemplate", init:initPorts },
+  image: { title:"Image Converter", description:"Convert common image formats and save the result with a native file dialog.", template:"imageTemplate", init:initImage },
+  media: { title:"Media Downloader", description:"Download authorized video or audio through yt-dlp.", template:"mediaTemplate", init:initMedia }
+};
+
+function showTool(id) {
+  const tool = tools[id];
+  if (!tool) return;
+  cleanupCurrent();
+  cleanupCurrent = () => {};
+  homeView.hidden = true;
+  toolView.hidden = false;
+  backBtn.hidden = false;
+  viewTitle.textContent = tool.title;
+  toolTitle.textContent = tool.title;
+  toolDescription.textContent = tool.description;
+  toolBody.replaceChildren(document.getElementById(tool.template).content.cloneNode(true));
+  const cleanup = tool.init();
+  if (typeof cleanup === "function") cleanupCurrent = cleanup;
+  window.scrollTo({top:0,behavior:"instant"});
+}
+
+function showHome() {
+  cleanupCurrent();
+  cleanupCurrent = () => {};
+  toolView.hidden = true;
+  homeView.hidden = false;
+  backBtn.hidden = true;
+  viewTitle.textContent = "Toolbox";
+  toolBody.replaceChildren();
+  window.scrollTo({top:0,behavior:"instant"});
+}
+
+document.querySelectorAll(".tool-card").forEach(card => {
+  const open = () => showTool(card.dataset.tool);
+  card.addEventListener("click", open);
+  card.addEventListener("keydown", event => {
+    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(); }
+  });
+});
+backBtn.addEventListener("click", showHome);
+
+function setStatus(id, text, kind="") {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = text || "";
+  el.className = "status" + (kind ? " " + kind : "");
+}
+
+function secureRandomInt(max) {
+  if (!Number.isInteger(max) || max <= 0) throw new Error("Invalid random range");
+  const limit = Math.floor(0x100000000 / max) * max;
+  const buffer = new Uint32Array(1);
+  do { crypto.getRandomValues(buffer); } while (buffer[0] >= limit);
+  return buffer[0] % max;
+}
+
+function shuffleSecure(items) {
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = secureRandomInt(i + 1);
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  return items;
+}
+
+function initPassword() {
+  const lower = "abcdefghijklmnopqrstuvwxyz", upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ", nums = "0123456789", symbols = "!@#$%^&*()-_=+[]{};:,.?/";
+  const length = document.getElementById("pwLength");
+  const value = document.getElementById("pwLengthValue");
+  const update = () => value.textContent = length.value;
+  length.addEventListener("input", update);
+  document.getElementById("pwGenerate").addEventListener("click", () => {
+    const sets = [];
+    if (document.getElementById("pwLower").checked) sets.push(lower);
+    if (document.getElementById("pwUpper").checked) sets.push(upper);
+    if (document.getElementById("pwNumber").checked) sets.push(nums);
+    if (document.getElementById("pwSymbol").checked) sets.push(symbols);
+    if (!sets.length) { setStatus("pwStatus","Select at least one character set.","error"); return; }
+    const n = Number(length.value);
+    const chars = sets.map(set => set[secureRandomInt(set.length)]);
+    const pool = sets.join("");
+    while (chars.length < n) chars.push(pool[secureRandomInt(pool.length)]);
+    document.getElementById("pwOutput").textContent = shuffleSecure(chars).join("");
+    setStatus("pwStatus","Generated with Web Crypto randomness.","success");
+  });
+  update();
+  document.getElementById("pwGenerate").click();
+}
+
+function bytesToBase64(bytes) {
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i=0;i<bytes.length;i+=chunk) binary += String.fromCharCode(...bytes.subarray(i,i+chunk));
+  return btoa(binary);
+}
+function base64ToBytes(text) {
+  const binary = atob(text.replace(/\s+/g,""));
+  return Uint8Array.from(binary, ch => ch.charCodeAt(0));
+}
+function initBase64() {
+  const input=document.getElementById("b64Input"), output=document.getElementById("b64Output");
+  document.getElementById("b64Encode").onclick=()=>{try{output.value=bytesToBase64(new TextEncoder().encode(input.value));setStatus("b64Status","Encoded.","success")}catch(e){setStatus("b64Status",String(e),"error")}};
+  document.getElementById("b64Decode").onclick=()=>{try{output.value=new TextDecoder("utf-8",{fatal:true}).decode(base64ToBytes(input.value));setStatus("b64Status","Decoded UTF-8 text.","success")}catch(e){setStatus("b64Status","Invalid Base64 or UTF-8 data: "+e,"error")}};
+  document.getElementById("b64Swap").onclick=()=>{input.value=output.value;output.value="";setStatus("b64Status","")};
+}
+
+function initUrl() {
+  const input=document.getElementById("urlInput"), output=document.getElementById("urlOutput");
+  document.getElementById("urlEncode").onclick=()=>{try{output.value=encodeURIComponent(input.value);setStatus("urlStatus","Encoded.","success")}catch(e){setStatus("urlStatus",String(e),"error")}};
+  document.getElementById("urlDecode").onclick=()=>{try{output.value=decodeURIComponent(input.value.replace(/\+/g,"%20"));setStatus("urlStatus","Decoded.","success")}catch(e){setStatus("urlStatus","Invalid percent-encoding: "+e,"error")}};
+  document.getElementById("urlSwap").onclick=()=>{input.value=output.value;output.value="";setStatus("urlStatus","")};
+}
+
+function initHash() {
+  let selectedFile="";
+  const algo=()=>document.getElementById("hashAlgorithm").value;
+  document.getElementById("hashTextBtn").onclick=async()=>{setStatus("hashStatus","Hashing…");try{const r=await request("hash.text",{text:document.getElementById("hashText").value,algorithm:algo()});document.getElementById("hashOutput").textContent=r.digest;setStatus("hashStatus","Text hash calculated.","success")}catch(e){setStatus("hashStatus",String(e),"error")}};
+  document.getElementById("hashFileBtn").onclick=async()=>{try{const pick=await request("file.pick");if(!pick||pick.opened===false||!pick.path)return;selectedFile=pick.path;document.getElementById("hashFilePath").textContent=selectedFile;setStatus("hashStatus","Hashing file…");const r=await request("hash.file",{path:selectedFile,algorithm:algo()});document.getElementById("hashOutput").textContent=r.digest;setStatus("hashStatus","File checksum calculated.","success")}catch(e){setStatus("hashStatus",String(e),"error")}};
+}
+
+function localDateTimeValue(date) {
+  const pad=n=>String(n).padStart(2,"0");
+  return date.getFullYear()+"-"+pad(date.getMonth()+1)+"-"+pad(date.getDate())+"T"+pad(date.getHours())+":"+pad(date.getMinutes())+":"+pad(date.getSeconds());
+}
+function initTimestamp() {
+  const dateInput=document.getElementById("timeDate"), epochInput=document.getElementById("timeEpoch"), output=document.getElementById("timeOutput");
+  const showDate=date=>{output.textContent="Local: "+date.toLocaleString()+"\nUTC:   "+date.toISOString()+"\nUnix seconds: "+Math.floor(date.getTime()/1000)+"\nUnix milliseconds: "+date.getTime()};
+  document.getElementById("timeNow").onclick=()=>{const d=new Date();dateInput.value=localDateTimeValue(d);epochInput.value=Math.floor(d.getTime()/1000);showDate(d);setStatus("timeStatus","Current time loaded.","success")};
+  document.getElementById("dateToEpoch").onclick=()=>{const d=new Date(dateInput.value);if(Number.isNaN(d.getTime())){setStatus("timeStatus","Enter a valid local date/time.","error");return}epochInput.value=Math.floor(d.getTime()/1000);showDate(d);setStatus("timeStatus","Converted.","success")};
+  document.getElementById("epochToDate").onclick=()=>{const raw=epochInput.value.trim();if(!/^-?\d+$/.test(raw)){setStatus("timeStatus","Enter an integer Unix timestamp.","error");return}let n=Number(raw);if(!Number.isSafeInteger(n)){setStatus("timeStatus","Timestamp is outside the safe integer range.","error");return}if(Math.abs(n)<100000000000)n*=1000;const d=new Date(n);if(Number.isNaN(d.getTime())){setStatus("timeStatus","Timestamp is outside the supported date range.","error");return}dateInput.value=localDateTimeValue(d);showDate(d);setStatus("timeStatus","Converted.","success")};
+  document.getElementById("timeNow").click();
+}
+
+function initJson() {
+  const input=document.getElementById("jsonInput");
+  const parse=()=>JSON.parse(input.value);
+  document.getElementById("jsonFormat").onclick=()=>{try{input.value=JSON.stringify(parse(),null,2);setStatus("jsonStatus","Valid JSON. Formatted with 2-space indentation.","success")}catch(e){setStatus("jsonStatus",String(e),"error")}};
+  document.getElementById("jsonCompact").onclick=()=>{try{input.value=JSON.stringify(parse());setStatus("jsonStatus","Valid JSON. Compacted.","success")}catch(e){setStatus("jsonStatus",String(e),"error")}};
+  document.getElementById("jsonValidate").onclick=()=>{try{parse();setStatus("jsonStatus","Valid JSON.","success")}catch(e){setStatus("jsonStatus",String(e),"error")}};
+}
+
+function initRegex() {
+  document.getElementById("regexRun").onclick=()=>{
+    const out=document.getElementById("regexOutput");out.replaceChildren();
+    try{
+      const pattern=document.getElementById("regexPattern").value, flags=document.getElementById("regexFlags").value, text=document.getElementById("regexText").value;
+      let rx=new RegExp(pattern,flags), matches=[];
+      if(rx.global){let m;let guard=0;while((m=rx.exec(text))!==null&&guard++<1000){matches.push(m);if(m[0]==="")rx.lastIndex++}}else{const m=rx.exec(text);if(m)matches.push(m)}
+      if(!matches.length){out.textContent="No matches";setStatus("regexStatus","0 matches.");return}
+      matches.forEach((m,i)=>{const div=document.createElement("div");div.className="match";const groups=m.length>1?" · groups: "+m.slice(1).map(v=>v??"").join(" | "):"";div.textContent=(i+1)+". ["+m.index+"] "+JSON.stringify(m[0])+groups;out.appendChild(div)});
+      setStatus("regexStatus",matches.length+(matches.length===1?" match.":" matches.")+(matches.length>=1000?" Stopped at 1000.":""),"success");
+    }catch(e){out.textContent="";setStatus("regexStatus",String(e),"error")}
+  };
+}
+
+function initPing() {
+  document.getElementById("pingRun").onclick=async()=>{const btn=document.getElementById("pingRun");btn.disabled=true;setStatus("pingStatus","Pinging…");document.getElementById("pingOutput").textContent="";try{const r=await request("network.ping",{target:document.getElementById("pingTarget").value});document.getElementById("pingOutput").textContent=r.output;setStatus("pingStatus","Ping completed.","success")}catch(e){setStatus("pingStatus",String(e),"error")}finally{btn.disabled=false}};
+}
+
+function traceLines(raw) {
+  const lines=raw.split(/\r?\n/).map(v=>v.trim()).filter(Boolean);
+  const hops=[];
+  for(const line of lines){
+    const m=line.match(/^(\d+)\s+(.+)$/);
+    if(m)hops.push({n:m[1],text:m[2]});
+  }
+  return hops;
+}
+function initTraceroute() {
+  document.getElementById("traceRun").onclick=async()=>{const btn=document.getElementById("traceRun");btn.disabled=true;setStatus("traceStatus","Tracing route… this can take a little while.");document.getElementById("traceHops").replaceChildren();document.getElementById("traceRaw").textContent="";try{const r=await request("network.traceroute",{target:document.getElementById("traceTarget").value});document.getElementById("traceRaw").textContent=r.output;const hops=traceLines(r.output);const box=document.getElementById("traceHops");if(hops.length){for(const hop of hops){const row=document.createElement("div");row.className="hop";const n=document.createElement("strong");n.textContent=hop.n;const text=document.createElement("span");text.textContent=hop.text;row.append(n,text);box.appendChild(row)}}else{box.textContent="Route completed; use Raw output for details."}setStatus("traceStatus","Traceroute completed.","success")}catch(e){setStatus("traceStatus",String(e),"error")}finally{btn.disabled=false}};
+}
+
+function initPorts() {
+  let jobId=null,timer=null,stopped=false;
+  const start=document.getElementById("portStart"), cancel=document.getElementById("portCancel"), progress=document.getElementById("portProgress"), summary=document.getElementById("portSummary"), out=document.getElementById("portOutput");
+  const render=s=>{const pct=s.total?Math.min(100,Math.round(s.completed/s.total*100)):0;progress.style.width=pct+"%";summary.textContent=s.state+" · "+s.completed.toLocaleString()+" / "+s.total.toLocaleString()+" attempts · "+s.open.length+" open";out.textContent=s.open.length?s.open.map(v=>v.target+":"+v.port+"  OPEN").join("\n"):"No open ports found yet.";if(s.state!=="running"){start.disabled=false;cancel.hidden=true;if(timer)clearTimeout(timer);timer=null}};
+  const poll=async()=>{if(stopped||!jobId)return;try{const s=await request("port.status",{id:jobId});render(s);if(s.state==="running")timer=setTimeout(poll,250)}catch(e){summary.textContent=String(e);summary.className="status error";start.disabled=false;cancel.hidden=true}};
+  start.onclick=async()=>{start.disabled=true;cancel.hidden=false;out.textContent="";progress.style.width="0%";summary.className="status";summary.textContent="Starting scan…";try{const s=await request("port.start",{target:document.getElementById("portTarget").value,ports:document.getElementById("portPorts").value,timeoutMs:Number(document.getElementById("portTimeout").value)});jobId=s.id;render(s);timer=setTimeout(poll,100)}catch(e){summary.textContent=String(e);summary.className="status error";start.disabled=false;cancel.hidden=true}};
+  cancel.onclick=async()=>{if(!jobId)return;cancel.disabled=true;try{const s=await request("port.cancel",{id:jobId});render(s)}catch(e){summary.textContent=String(e);summary.className="status error"}finally{cancel.disabled=false}};
+  return()=>{stopped=true;if(timer)clearTimeout(timer)};
+}
+
+function initImage() {
+  let path="";
+  const pick=document.getElementById("imagePick"), convert=document.getElementById("imageConvert");
+  pick.onclick=async()=>{try{const r=await request("image.pick");if(!r||r.opened===false||!r.path)return;path=r.path;document.getElementById("imagePath").textContent=path;convert.disabled=false;setStatus("imageStatus","Image selected.","success")}catch(e){setStatus("imageStatus",String(e),"error")}};
+  convert.onclick=async()=>{if(!path)return;convert.disabled=true;setStatus("imageStatus","Converting…");try{const r=await request("image.convert",{path,format:document.getElementById("imageFormat").value});if(r&&r.saved===false){setStatus("imageStatus","Save cancelled.");return}setStatus("imageStatus","Saved: "+r.path,"success")}catch(e){setStatus("imageStatus",String(e),"error")}finally{convert.disabled=false}};
+}
+
+function initMedia() {
+  let jobId=null,timer=null,stopped=false;
+  const start=document.getElementById("mediaStart"), output=document.getElementById("mediaOutput");
+  const check=async()=>{setStatus("mediaStatus","Checking…");try{const r=await request("media.requirements");output.textContent="yt-dlp: "+(r.ytDlp||"Not found")+"\nFFmpeg: "+(r.ffmpeg||"Not found");setStatus("mediaStatus",r.ytDlp?"yt-dlp is available.":"Install yt-dlp and make it available in PATH.",r.ytDlp?"success":"error")}catch(e){setStatus("mediaStatus",String(e),"error")}};
+  document.getElementById("mediaCheck").onclick=check;
+  const poll=async()=>{if(stopped||!jobId)return;try{const s=await request("media.status",{id:jobId});output.textContent=s.message+(s.error?"\n\n"+s.error:"");if(s.state==="running"){timer=setTimeout(poll,700)}else{start.disabled=false;setStatus("mediaStatus",s.state==="completed"?"Download completed.":"Download failed.",s.state==="completed"?"success":"error")}}catch(e){start.disabled=false;setStatus("mediaStatus",String(e),"error")}};
+  start.onclick=async()=>{start.disabled=true;output.textContent="";setStatus("mediaStatus","Starting download…");try{const s=await request("media.start",{url:document.getElementById("mediaUrl").value,mode:document.getElementById("mediaMode").value,outputDir:document.getElementById("mediaDir").value});jobId=s.id;output.textContent=s.message;timer=setTimeout(poll,500)}catch(e){start.disabled=false;setStatus("mediaStatus",String(e),"error")}};
+  check();
+  return()=>{stopped=true;if(timer)clearTimeout(timer)};
+}
+})();
+</script>
+</body>
+</html>
