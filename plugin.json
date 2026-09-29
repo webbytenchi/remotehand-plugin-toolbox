@@ -1,0 +1,45 @@
+{
+  "id": "remotehand.toolbox",
+  "name": "RemoteHand Toolbox",
+  "version": "0.1.0",
+  "apiVersion": 1,
+  "author": "RemoteHand",
+  "description": "Curated everyday, developer, network, image, and media utilities for RemoteHand.",
+  "runtime": {
+    "kind": "executable",
+    "entrypoints": {
+      "windows-x86_64": "bin/windows-x86_64/remotehand-toolbox.exe",
+      "linux-x86_64": "bin/linux-x86_64/remotehand-toolbox",
+      "linux-aarch64": "bin/linux-aarch64/remotehand-toolbox"
+    }
+  },
+  "permissions": [
+    "network.connect",
+    "network.inspect",
+    "files.open",
+    "files.save"
+  ],
+  "contributes": {
+    "sidebar": [
+      {
+        "id": "toolbox",
+        "title": "Toolbox",
+        "icon": "assets/sidebar.svg",
+        "panel": "toolbox"
+      }
+    ],
+    "panels": [
+      {
+        "id": "toolbox",
+        "title": "Toolbox",
+        "entry": "ui/index.html"
+      }
+    ],
+    "commands": [
+      {
+        "id": "open",
+        "title": "Open Toolbox"
+      }
+    ]
+  }
+}
