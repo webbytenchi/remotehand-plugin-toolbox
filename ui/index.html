@@ -38,6 +38,7 @@ input[type=range]{padding:0;border:0;background:transparent;accent-color:var(--r
 .grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .field{display:grid;gap:6px}.field>span,.label{color:var(--remotehand-muted-text,#9ba8b7);font-size:11px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{min-width:0}
 .actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.actions + .output,.actions + .file-path{margin-top:12px}
 .output{white-space:pre-wrap;word-break:break-word;min-height:72px;padding:11px;border:1px solid var(--remotehand-border,#293541);border-radius:9px;background:var(--remotehand-terminal-background,#0d1318);font-family:var(--remotehand-terminal-font-family,Consolas,monospace);line-height:1.5;overflow:auto}
 .output.tall{max-height:420px}.result-line{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;padding:7px 0;border-bottom:1px solid var(--remotehand-border,#27323c)}.result-line:last-child{border-bottom:0}
 .status{margin-top:10px;color:var(--remotehand-muted-text,#98a5b3)}.status.error{color:#e899a2}.status.success{color:#91cfaa}
@@ -47,9 +48,19 @@ input[type=range]{padding:0;border:0;background:transparent;accent-color:var(--r
 .hops{display:grid;gap:6px}.hop{display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--remotehand-border,#2c3742);border-radius:8px;background:var(--remotehand-terminal-background,#10161c)}.hop strong{text-align:center;color:var(--remotehand-accent-text,#9ec7ea)}.hop span{font-family:var(--remotehand-terminal-font-family,Consolas,monospace);white-space:pre-wrap}
 .match{padding:8px 0;border-bottom:1px solid var(--remotehand-border,#29343f)}.match:last-child{border-bottom:0}.match code{color:var(--remotehand-accent-text,#9ec7ea)}
 .file-path{word-break:break-all;color:var(--remotehand-muted-text,#a1adba);font-family:var(--remotehand-terminal-font-family,Consolas,monospace)}
+.json-panel{min-height:calc(100vh - 190px);display:flex;flex-direction:column}
+.json-workbench{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;flex:1;min-height:420px;margin-top:12px}
+.json-workbench .field{min-height:0}.json-workbench textarea{height:100%;min-height:420px}
+.json-preview{margin:0;height:100%;min-height:420px;overflow:auto;white-space:pre-wrap;word-break:break-word;padding:11px;border:1px solid var(--remotehand-border,#293541);border-radius:9px;background:var(--remotehand-terminal-background,#0d1318);font-family:var(--remotehand-terminal-font-family,Consolas,monospace);line-height:1.5}
+.json-key{color:var(--remotehand-accent-text,#9ec7ea)}.json-string{color:var(--remotehand-success-text,#91cfaa)}.json-number{color:var(--remotehand-warning-text,#e5b36c)}.json-literal{color:var(--remotehand-accent,#a58ddd)}
+.guide{margin-top:12px;padding:12px;border:1px solid var(--remotehand-border,#303b46);border-radius:10px;background:var(--remotehand-terminal-background,#10161c)}
+.guide h3{margin:0 0 8px;font-size:13px}.guide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 16px;color:var(--remotehand-muted-text,#9ba8b7)}.guide code{color:var(--remotehand-accent-text,#9ec7ea)}
+.example-buttons{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.example-buttons button{min-height:30px;padding:4px 8px}
+.port-legend{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}.port-chip{padding:4px 7px;border:1px solid var(--remotehand-border,#35424e);border-radius:999px;background:var(--remotehand-terminal-background,#10161c);color:var(--remotehand-muted-text,#a0adba);font-size:11px}.port-chip strong{color:var(--remotehand-text,#e7edf5)}
+.image-result{display:grid;grid-template-columns:180px minmax(0,1fr);gap:14px;align-items:start;margin-top:14px}.image-thumb{width:180px;height:180px;object-fit:contain;border:1px solid var(--remotehand-border,#33404d);border-radius:10px;background:var(--remotehand-terminal-background,#0d1318);cursor:pointer}.reveal-link{background:transparent;border:0;padding:0;min-height:0;text-align:left;color:var(--remotehand-accent-text,#9ec7ea);text-decoration:underline;cursor:pointer;word-break:break-all}
 small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a4);line-height:1.45}
 @media(max-width:900px){.tool-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-3{grid-template-columns:1fr}}
-@media(max-width:620px){.view{padding:12px}.topbar{padding:10px 12px}.intro{flex-direction:column}.tool-grid,.grid-2{grid-template-columns:1fr}.tool-card{min-height:96px}.tool-head{flex-direction:column}.tool-head button{align-self:flex-start}}
+@media(max-width:620px){.view{padding:12px}.topbar{padding:10px 12px}.intro{flex-direction:column}.tool-grid,.grid-2,.json-workbench,.guide-grid{grid-template-columns:1fr}.tool-card{min-height:96px}.tool-head{flex-direction:column}.tool-head button{align-self:flex-start}.json-panel{min-height:auto}.json-workbench textarea,.json-preview{min-height:300px}.image-result{grid-template-columns:1fr}.image-thumb{width:100%;height:220px}}
 </style>
 </head>
 <body>
@@ -62,7 +73,7 @@ small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a
 <main id="homeView" class="view">
   <section class="intro">
     <div><h2>RemoteHand Toolbox</h2><p>Useful everyday, developer, network, image, and media utilities in one place.</p></div>
-    <span class="badge">12 built-in tools</span>
+    <span class="badge">11 built-in tools</span>
   </section>
 
   <section class="category"><h3>Generators</h3></section>
@@ -83,14 +94,13 @@ small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a
   <section class="category"><h3>Network</h3></section>
   <section class="tool-grid">
     <article class="tool-card" data-tool="ping" tabindex="0"><div class="tool-icon">↔</div><div><h4>Ping</h4><p>Check reachability and latency using the operating system ping utility.</p></div></article>
-    <article class="tool-card" data-tool="traceroute" tabindex="0"><div class="tool-icon">⇢</div><div><h4>Visual Traceroute</h4><p>Trace network hops and display the route as a readable hop list.</p></div></article>
+    <article class="tool-card" data-tool="traceroute" tabindex="0"><div class="tool-icon">⇢</div><div><h4>Traceroute</h4><p>Trace network hops and display the route as a readable hop list.</p></div></article>
     <article class="tool-card" data-tool="ports" tabindex="0"><div class="tool-icon">::</div><div><h4>Port Scanner</h4><p>Scan one host/IP or an IPv4 range against one port or a port range.</p></div></article>
   </section>
 
-  <section class="category"><h3>Image &amp; Media</h3></section>
+  <section class="category"><h3>Image</h3></section>
   <section class="tool-grid">
     <article class="tool-card" data-tool="image" tabindex="0"><div class="tool-icon">▧</div><div><h4>Image Converter</h4><p>Convert PNG, JPG, WebP, BMP, GIF, and ICO images to common formats.</p></div></article>
-    <article class="tool-card" data-tool="media" tabindex="0"><div class="tool-icon">▶</div><div><h4>Media Downloader</h4><p>Download authorized video or audio using yt-dlp.</p></div></article>
   </section>
 </main>
 
@@ -143,12 +153,35 @@ small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a
 </template>
 
 <template id="jsonTemplate">
-  <section class="panel"><label class="field"><span>JSON</span><textarea id="jsonInput" style="min-height:220px"></textarea></label><div class="actions"><button id="jsonFormat" class="primary">Format</button><button id="jsonCompact">Compact</button><button id="jsonValidate">Validate</button></div><div id="jsonStatus" class="status"></div></section>
+  <section class="panel json-panel">
+    <div class="actions" style="margin-top:0"><button id="jsonFormat" class="primary">Format</button><button id="jsonCompact">Compact</button><button id="jsonValidate">Validate</button></div>
+    <div class="json-workbench">
+      <label class="field"><span>Editable JSON</span><textarea id="jsonInput" spellcheck="false"></textarea></label>
+      <div class="field"><span>Syntax-highlighted preview</span><pre id="jsonPreview" class="json-preview">Enter JSON on the left, then Format or Validate.</pre></div>
+    </div>
+    <div id="jsonStatus" class="status"></div>
+  </section>
 </template>
 
 <template id="regexTemplate">
   <section class="panel">
     <div class="grid-2"><label class="field"><span>Pattern</span><input id="regexPattern" type="text" placeholder="e.g. \b\w+@\w+\.\w+\b"></label><label class="field"><span>Flags</span><input id="regexFlags" type="text" value="gi" placeholder="gimsuy"></label></div>
+    <div class="guide">
+      <h3>Quick Guide</h3>
+      <div class="guide-grid">
+        <div><code>.</code> any character · <code>\d</code> digit · <code>\w</code> word character · <code>\s</code> whitespace</div>
+        <div><code>^</code> start · <code>$</code> end · <code>*</code> 0+ · <code>+</code> 1+ · <code>?</code> optional</div>
+        <div><code>[abc]</code> one listed character · <code>[^abc]</code> anything except listed</div>
+        <div><code>(...)</code> capture group · <code>(?:...)</code> non-capturing group · <code>a|b</code> either/or</div>
+      </div>
+      <div class="example-buttons" aria-label="Regex examples">
+        <button type="button" data-regex-example="email">Email</button>
+        <button type="button" data-regex-example="ipv4">IPv4</button>
+        <button type="button" data-regex-example="numbers">Numbers</button>
+        <button type="button" data-regex-example="words">Words</button>
+        <button type="button" data-regex-example="groups">Capture groups</button>
+      </div>
+    </div>
     <label class="field" style="margin-top:12px"><span>Test text</span><textarea id="regexText"></textarea></label><div class="actions"><button id="regexRun" class="primary">Test regex</button></div><div id="regexOutput" class="output"></div><div id="regexStatus" class="status"></div>
   </section>
 </template>
@@ -165,12 +198,14 @@ small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a
   <section class="panel">
     <div class="grid-3">
       <label class="field"><span>Target</span><input id="portTarget" type="text" placeholder="192.168.1.10 or 192.168.1.10-192.168.1.50"></label>
-      <label class="field"><span>Port / range</span><input id="portPorts" type="text" value="1-1024" placeholder="443 or 1-1024"></label>
+      <label class="field"><span>Port preset</span><select id="portPreset"><option value="common">Common ports</option><option value="web">Web</option><option value="remote">Remote access</option><option value="mail">Mail</option><option value="database">Databases</option><option value="custom">Custom</option></select></label>
       <label class="field"><span>Timeout per attempt (ms)</span><input id="portTimeout" type="number" min="50" max="5000" value="350"></label>
     </div>
+    <label class="field" style="margin-top:12px"><span>Ports — single, range, or comma-separated list</span><input id="portPorts" type="text" value="20,21,22,23,25,53,80,110,123,135,139,143,389,443,445,465,587,636,993,995,1433,1521,3306,3389,5432,5900,6379,8080,8443"></label>
+    <div id="portLegend" class="port-legend"></div>
     <div class="actions"><button id="portStart" class="primary">Start scan</button><button id="portCancel" class="danger" hidden>Cancel</button></div>
     <div class="progress"><div id="portProgress"></div></div><div id="portSummary" class="status"></div><div id="portOutput" class="output tall"></div>
-    <small class="note">IP ranges use full IPv4 addresses on both sides. v0.1.0 limits one scan to 256 targets, 4,096 ports, and 131,072 total connection attempts.</small>
+    <small class="note">A hostname resolves to one scan target, preferring IPv4 when available. Explicit IP ranges use full IPv4 addresses on both sides. v0.1.0 limits one scan to 256 targets, 4,096 unique ports, and 131,072 total connection attempts.</small>
   </section>
 </template>
 
@@ -178,19 +213,15 @@ small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a
   <section class="panel">
     <div class="grid-2"><div class="field"><span>Input image</span><div id="imagePath" class="file-path">No file selected</div></div><label class="field"><span>Output format</span><select id="imageFormat"><option value="png">PNG</option><option value="jpg">JPG</option><option value="webp">WebP</option><option value="bmp">BMP</option><option value="ico">ICO</option></select></label></div>
     <div class="actions"><button id="imagePick">Choose image…</button><button id="imageConvert" class="primary" disabled>Convert &amp; Save…</button></div><div id="imageStatus" class="status"></div>
+    <div id="imageResult" class="image-result" hidden>
+      <img id="imagePreview" class="image-thumb" alt="Converted image preview" title="Show generated image in File Explorer">
+      <div><div class="label">Generated image</div><button id="imageReveal" class="reveal-link" type="button"></button><small class="note">Click the thumbnail or saved path to open File Explorer with this image selected.</small></div>
+    </div>
     <small class="note">GIF input is supported as a static image conversion. Animated GIF editing is outside the v0.1.0 scope.</small>
   </section>
 </template>
 
-<template id="mediaTemplate">
-  <section class="panel">
-    <div class="grid-2"><label class="field"><span>Media URL</span><input id="mediaUrl" type="url" placeholder="https://…"></label><label class="field"><span>Mode</span><select id="mediaMode"><option value="video">Video (best, MP4 merge)</option><option value="audio">Audio only (MP3)</option></select></label></div>
-    <label class="field" style="margin-top:12px"><span>Output directory</span><input id="mediaDir" type="text" placeholder="C:\Users\You\Downloads"></label>
-    <div class="actions"><button id="mediaStart" class="primary">Download</button><button id="mediaCheck">Check requirements</button></div>
-    <div id="mediaOutput" class="output"></div><div id="mediaStatus" class="status"></div>
-    <small class="note">Media Downloader uses yt-dlp from PATH. FFmpeg is recommended for best-quality video merging and is required for MP3 extraction. Download only media you are authorized to save.</small>
-  </section>
-</template>
+
 
 <script>
 (() => {
@@ -223,10 +254,9 @@ const tools = {
   json: { title:"JSON Formatter / Validator", description:"Validate, pretty-print, or compact JSON.", template:"jsonTemplate", init:initJson },
   regex: { title:"Regex Tester", description:"Run JavaScript-compatible regular expressions against sample text.", template:"regexTemplate", init:initRegex },
   ping: { title:"Ping", description:"Check target reachability with the operating system ping command.", template:"pingTemplate", init:initPing },
-  traceroute: { title:"Visual Traceroute", description:"Trace network hops and display the route in a compact hop view.", template:"tracerouteTemplate", init:initTraceroute },
+  traceroute: { title:"Traceroute", description:"Trace network hops and display the route in a compact hop view.", template:"tracerouteTemplate", init:initTraceroute },
   ports: { title:"Port Scanner", description:"Scan a single host/IP or IPv4 range against a single port or port range.", template:"portsTemplate", init:initPorts },
-  image: { title:"Image Converter", description:"Convert common image formats and save the result with a native file dialog.", template:"imageTemplate", init:initImage },
-  media: { title:"Media Downloader", description:"Download authorized video or audio through yt-dlp.", template:"mediaTemplate", init:initMedia }
+  image: { title:"Image Converter", description:"Convert common image formats and save the result with a native file dialog.", template:"imageTemplate", init:initImage }
 };
 
 function showTool(id) {
@@ -357,15 +387,42 @@ function initTimestamp() {
   document.getElementById("timeNow").click();
 }
 
+function renderJsonPreview(value) {
+  const preview=document.getElementById("jsonPreview");
+  preview.replaceChildren();
+  const pretty=JSON.stringify(value,null,2);
+  const token=/("(?:\\.|[^"\\])*"(?=\s*:)|"(?:\\.|[^"\\])*"|true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g;
+  let last=0,match;
+  while((match=token.exec(pretty))!==null){
+    if(match.index>last)preview.append(document.createTextNode(pretty.slice(last,match.index)));
+    const span=document.createElement("span");
+    const text=match[0];
+    if(text.startsWith('"')) span.className=pretty.slice(token.lastIndex).match(/^\s*:/)?"json-key":"json-string";
+    else if(/^(true|false|null)$/.test(text)) span.className="json-literal";
+    else span.className="json-number";
+    span.textContent=text;
+    preview.append(span);
+    last=token.lastIndex;
+  }
+  if(last<pretty.length)preview.append(document.createTextNode(pretty.slice(last)));
+}
 function initJson() {
   const input=document.getElementById("jsonInput");
   const parse=()=>JSON.parse(input.value);
-  document.getElementById("jsonFormat").onclick=()=>{try{input.value=JSON.stringify(parse(),null,2);setStatus("jsonStatus","Valid JSON. Formatted with 2-space indentation.","success")}catch(e){setStatus("jsonStatus",String(e),"error")}};
-  document.getElementById("jsonCompact").onclick=()=>{try{input.value=JSON.stringify(parse());setStatus("jsonStatus","Valid JSON. Compacted.","success")}catch(e){setStatus("jsonStatus",String(e),"error")}};
-  document.getElementById("jsonValidate").onclick=()=>{try{parse();setStatus("jsonStatus","Valid JSON.","success")}catch(e){setStatus("jsonStatus",String(e),"error")}};
+  const valid=(message,mutate)=>{try{const value=parse();if(mutate)input.value=mutate(value);renderJsonPreview(value);setStatus("jsonStatus",message,"success")}catch(e){document.getElementById("jsonPreview").textContent="Invalid JSON";setStatus("jsonStatus",String(e),"error")}};
+  document.getElementById("jsonFormat").onclick=()=>valid("Valid JSON. Formatted with 2-space indentation.",value=>JSON.stringify(value,null,2));
+  document.getElementById("jsonCompact").onclick=()=>valid("Valid JSON. Compacted.",value=>JSON.stringify(value));
+  document.getElementById("jsonValidate").onclick=()=>valid("Valid JSON.");
 }
-
 function initRegex() {
+  const examples={
+    email:{pattern:"\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b",flags:"gi",text:"Contact admin@example.com or support@remotehand.dev"},
+    ipv4:{pattern:"\\b(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)){3}\\b",flags:"g",text:"Gateway 192.168.1.1, DNS 8.8.8.8, invalid 999.1.1.1"},
+    numbers:{pattern:"-?\\d+(?:\\.\\d+)?",flags:"g",text:"CPU 12.5%, delta -4, retries 3"},
+    words:{pattern:"\\b[A-Za-z]+\\b",flags:"g",text:"RemoteHand Toolbox regex tester"},
+    groups:{pattern:"(\\w+)=(\\d+)",flags:"g",text:"cpu=42 memory=73 disk=18"}
+  };
+  document.querySelectorAll("[data-regex-example]").forEach(button=>button.onclick=()=>{const e=examples[button.dataset.regexExample];document.getElementById("regexPattern").value=e.pattern;document.getElementById("regexFlags").value=e.flags;document.getElementById("regexText").value=e.text;document.getElementById("regexRun").click()});
   document.getElementById("regexRun").onclick=()=>{
     const out=document.getElementById("regexOutput");out.replaceChildren();
     try{
@@ -378,7 +435,6 @@ function initRegex() {
     }catch(e){out.textContent="";setStatus("regexStatus",String(e),"error")}
   };
 }
-
 function initPing() {
   document.getElementById("pingRun").onclick=async()=>{const btn=document.getElementById("pingRun");btn.disabled=true;setStatus("pingStatus","Pinging…");document.getElementById("pingOutput").textContent="";try{const r=await request("network.ping",{target:document.getElementById("pingTarget").value});document.getElementById("pingOutput").textContent=r.output;setStatus("pingStatus","Ping completed.","success")}catch(e){setStatus("pingStatus",String(e),"error")}finally{btn.disabled=false}};
 }
@@ -398,31 +454,34 @@ function initTraceroute() {
 
 function initPorts() {
   let jobId=null,timer=null,stopped=false;
-  const start=document.getElementById("portStart"), cancel=document.getElementById("portCancel"), progress=document.getElementById("portProgress"), summary=document.getElementById("portSummary"), out=document.getElementById("portOutput");
-  const render=s=>{const pct=s.total?Math.min(100,Math.round(s.completed/s.total*100)):0;progress.style.width=pct+"%";summary.textContent=s.state+" · "+s.completed.toLocaleString()+" / "+s.total.toLocaleString()+" attempts · "+s.open.length+" open";out.textContent=s.open.length?s.open.map(v=>v.target+":"+v.port+"  OPEN").join("\n"):"No open ports found yet.";if(s.state!=="running"){start.disabled=false;cancel.hidden=true;if(timer)clearTimeout(timer);timer=null}};
-  const poll=async()=>{if(stopped||!jobId)return;try{const s=await request("port.status",{id:jobId});render(s);if(s.state==="running")timer=setTimeout(poll,250)}catch(e){summary.textContent=String(e);summary.className="status error";start.disabled=false;cancel.hidden=true}};
-  start.onclick=async()=>{start.disabled=true;cancel.hidden=false;out.textContent="";progress.style.width="0%";summary.className="status";summary.textContent="Starting scan…";try{const s=await request("port.start",{target:document.getElementById("portTarget").value,ports:document.getElementById("portPorts").value,timeoutMs:Number(document.getElementById("portTimeout").value)});jobId=s.id;render(s);timer=setTimeout(poll,100)}catch(e){summary.textContent=String(e);summary.className="status error";start.disabled=false;cancel.hidden=true}};
-  cancel.onclick=async()=>{if(!jobId)return;cancel.disabled=true;try{const s=await request("port.cancel",{id:jobId});render(s)}catch(e){summary.textContent=String(e);summary.className="status error"}finally{cancel.disabled=false}};
+  const portNames={20:"FTP Data",21:"FTP",22:"SSH",23:"Telnet",25:"SMTP",53:"DNS",67:"DHCP",68:"DHCP",80:"HTTP",110:"POP3",123:"NTP",135:"MS RPC",137:"NetBIOS",138:"NetBIOS",139:"NetBIOS",143:"IMAP",161:"SNMP",389:"LDAP",443:"HTTPS",445:"SMB",465:"SMTPS",587:"SMTP Submission",636:"LDAPS",993:"IMAPS",995:"POP3S",1433:"MS SQL",1521:"Oracle",3306:"MySQL",3389:"RDP",5432:"PostgreSQL",5900:"VNC",6379:"Redis",8080:"HTTP Alt",8443:"HTTPS Alt"};
+  const presets={
+    common:"20,21,22,23,25,53,80,110,123,135,139,143,389,443,445,465,587,636,993,995,1433,1521,3306,3389,5432,5900,6379,8080,8443",
+    web:"80,443,8000,8080,8443",
+    remote:"22,23,3389,5900",
+    mail:"25,110,143,465,587,993,995",
+    database:"1433,1521,3306,5432,6379"
+  };
+  const start=document.getElementById("portStart"), cancel=document.getElementById("portCancel"), progress=document.getElementById("portProgress"), summary=document.getElementById("portSummary"), out=document.getElementById("portOutput"), portsInput=document.getElementById("portPorts"), preset=document.getElementById("portPreset"), legend=document.getElementById("portLegend");
+  const renderLegend=()=>{legend.replaceChildren();const values=[...new Set((portsInput.value.match(/\d+/g)||[]).map(Number).filter(port=>portNames[port]))].slice(0,40);for(const port of values){const chip=document.createElement("span");chip.className="port-chip";const strong=document.createElement("strong");strong.textContent=String(port);chip.append(strong,document.createTextNode(" "+portNames[port]));legend.append(chip)}};
+  preset.onchange=()=>{if(presets[preset.value]){portsInput.value=presets[preset.value];renderLegend()}};
+  portsInput.addEventListener("input",()=>{preset.value="custom";renderLegend()});
+  const render=s=>{const pct=s.total?Math.min(100,Math.round(s.completed/s.total*100)):0;progress.style.width=pct+"%";summary.textContent=s.state+" · "+s.completed.toLocaleString()+" / "+s.total.toLocaleString()+" attempts · "+s.open.length+" open";out.textContent=s.open.length?s.open.map(v=>v.target+":"+v.port+"  OPEN"+(portNames[v.port]?"  · "+portNames[v.port]:"")).join("\n"):"No open ports found yet.";if(s.state!=="running"){start.disabled=false;cancel.hidden=true;if(timer)clearTimeout(timer);timer=null}};
+  const poll=async()=>{if(stopped||!jobId)return;try{const st=await request("port.status",{id:jobId});render(st);if(st.state==="running")timer=setTimeout(poll,250)}catch(e){summary.textContent=String(e);summary.className="status error";start.disabled=false;cancel.hidden=true}};
+  start.onclick=async()=>{start.disabled=true;cancel.hidden=false;out.textContent="";progress.style.width="0%";summary.className="status";summary.textContent="Starting scan…";try{const st=await request("port.start",{target:document.getElementById("portTarget").value,ports:portsInput.value,timeoutMs:Number(document.getElementById("portTimeout").value)});jobId=st.id;render(st);timer=setTimeout(poll,100)}catch(e){summary.textContent=String(e);summary.className="status error";start.disabled=false;cancel.hidden=true}};
+  cancel.onclick=async()=>{if(!jobId)return;cancel.disabled=true;try{const st=await request("port.cancel",{id:jobId});render(st)}catch(e){summary.textContent=String(e);summary.className="status error"}finally{cancel.disabled=false}};
+  renderLegend();
   return()=>{stopped=true;if(timer)clearTimeout(timer)};
 }
-
 function initImage() {
-  let path="";
-  const pick=document.getElementById("imagePick"), convert=document.getElementById("imageConvert");
-  pick.onclick=async()=>{try{const r=await request("image.pick");if(!r||r.opened===false||!r.path)return;path=r.path;document.getElementById("imagePath").textContent=path;convert.disabled=false;setStatus("imageStatus","Image selected.","success")}catch(e){setStatus("imageStatus",String(e),"error")}};
-  convert.onclick=async()=>{if(!path)return;convert.disabled=true;setStatus("imageStatus","Converting…");try{const r=await request("image.convert",{path,format:document.getElementById("imageFormat").value});if(r&&r.saved===false){setStatus("imageStatus","Save cancelled.");return}setStatus("imageStatus","Saved: "+r.path,"success")}catch(e){setStatus("imageStatus",String(e),"error")}finally{convert.disabled=false}};
+  let path="",savedPath="";
+  const pick=document.getElementById("imagePick"), convert=document.getElementById("imageConvert"), result=document.getElementById("imageResult"), preview=document.getElementById("imagePreview"), reveal=document.getElementById("imageReveal");
+  const revealSaved=async()=>{if(!savedPath)return;try{await request("image.reveal",{path:savedPath})}catch(e){setStatus("imageStatus",String(e),"error")}};
+  preview.onclick=revealSaved;reveal.onclick=revealSaved;
+  pick.onclick=async()=>{try{const r=await request("image.pick");if(!r||r.opened===false||!r.path)return;path=r.path;document.getElementById("imagePath").textContent=path;convert.disabled=false;result.hidden=true;setStatus("imageStatus","Image selected.","success")}catch(e){setStatus("imageStatus",String(e),"error")}};
+  convert.onclick=async()=>{if(!path)return;convert.disabled=true;setStatus("imageStatus","Converting…");try{const r=await request("image.convert",{path,format:document.getElementById("imageFormat").value});if(r&&r.saved===false){setStatus("imageStatus","Save cancelled.");return}savedPath=r.path;preview.src=r.preview;reveal.textContent=r.path;result.hidden=false;setStatus("imageStatus","Image converted successfully.","success")}catch(e){setStatus("imageStatus",String(e),"error")}finally{convert.disabled=false}};
 }
 
-function initMedia() {
-  let jobId=null,timer=null,stopped=false;
-  const start=document.getElementById("mediaStart"), output=document.getElementById("mediaOutput");
-  const check=async()=>{setStatus("mediaStatus","Checking…");try{const r=await request("media.requirements");output.textContent="yt-dlp: "+(r.ytDlp||"Not found")+"\nFFmpeg: "+(r.ffmpeg||"Not found");setStatus("mediaStatus",r.ytDlp?"yt-dlp is available.":"Install yt-dlp and make it available in PATH.",r.ytDlp?"success":"error")}catch(e){setStatus("mediaStatus",String(e),"error")}};
-  document.getElementById("mediaCheck").onclick=check;
-  const poll=async()=>{if(stopped||!jobId)return;try{const s=await request("media.status",{id:jobId});output.textContent=s.message+(s.error?"\n\n"+s.error:"");if(s.state==="running"){timer=setTimeout(poll,700)}else{start.disabled=false;setStatus("mediaStatus",s.state==="completed"?"Download completed.":"Download failed.",s.state==="completed"?"success":"error")}}catch(e){start.disabled=false;setStatus("mediaStatus",String(e),"error")}};
-  start.onclick=async()=>{start.disabled=true;output.textContent="";setStatus("mediaStatus","Starting download…");try{const s=await request("media.start",{url:document.getElementById("mediaUrl").value,mode:document.getElementById("mediaMode").value,outputDir:document.getElementById("mediaDir").value});jobId=s.id;output.textContent=s.message;timer=setTimeout(poll,500)}catch(e){start.disabled=false;setStatus("mediaStatus",String(e),"error")}};
-  check();
-  return()=>{stopped=true;if(timer)clearTimeout(timer)};
-}
 })();
 </script>
 </body>
