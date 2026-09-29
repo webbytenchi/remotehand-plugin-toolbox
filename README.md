@@ -6,7 +6,7 @@ Toolbox intentionally ships a built-in catalog rather than a second plugin syste
 
 ## v0.1.0 scope
 
-The first Toolbox release contains 12 built-in tools:
+The first Toolbox release contains 11 built-in tools:
 
 ### Generators
 
@@ -24,8 +24,8 @@ The first Toolbox release contains 12 built-in tools:
 ### Network
 
 - **Ping** — operating-system ping with raw results.
-- **Visual Traceroute** — operating-system traceroute/tracert rendered as a hop list with raw output available.
-- **Port Scanner** — single hostname/IP or full IPv4 range, combined with a single port or port range. Scans are cancellable and concurrency-bounded.
+- **Traceroute** — operating-system traceroute/tracert rendered as a hop list with raw output available.
+- **Port Scanner** — single hostname/IP or full IPv4 range, combined with a single port, port range, or comma-separated list. Includes common-port presets and service-name legends. Scans are cancellable and concurrency-bounded. A hostname resolves to one scan target, preferring IPv4 when available.
 
 Port Scanner v0.1.0 limits a single scan to:
 
@@ -38,20 +38,17 @@ A single target may be a hostname, IPv4 address, or IPv6 address. Ranges use ful
 
 `192.168.1.10-192.168.1.50`
 
-Ports may be entered as either:
+Ports may be entered as a single port, range, or list, for example:
 
 `443`
 
-or:
-
 `1-1024`
+
+`22,80,443,8000-8002`
 
 ### Image and media
 
-- **Image Converter** — reads PNG, JPG/JPEG, WebP, BMP, GIF, and ICO; writes PNG, JPG, WebP, BMP, or ICO. GIF is treated as a static image in v0.1.0.
-- **Media Downloader** — authorized video or MP3 audio downloads through yt-dlp.
-
-Media Downloader intentionally uses the maintained `yt-dlp` extractor rather than implementing site-specific scraping inside Toolbox. `yt-dlp` must be available in `PATH`. FFmpeg is recommended for best-quality video merging and required for MP3 extraction.
+- **Image Converter** — reads PNG, JPG/JPEG, WebP, BMP, GIF, and ICO; writes PNG, JPG, WebP, BMP, or ICO. GIF is treated as a static image in v0.1.0. Converted images show a thumbnail and can be revealed directly in the system file manager.
 
 ## Launcher
 
@@ -60,7 +57,7 @@ Opening Toolbox shows an Arcade-style launcher grouped into:
 - Generators
 - Encoding & Data
 - Network
-- Image & Media
+- Image
 
 Every utility is a compact card. Selecting a card opens the tool in-place; **← Toolbox** returns to the launcher.
 
@@ -95,7 +92,6 @@ Toolbox owns:
 - image conversion
 - network commands
 - bounded port scanning
-- media-download orchestration
 
 There is intentionally no user-defined Toolbox tool API in v0.1.0.
 
@@ -121,8 +117,6 @@ dist\remotehand-toolbox-windows-x86_64\
 dist\remotehand-toolbox-v0.1.0-windows-x86_64.zip
 dist\SHA256SUMS.txt
 ```
-
-For Media Downloader testing, install `yt-dlp` and FFmpeg separately and make them available in `PATH`.
 
 ## License
 
