@@ -21,10 +21,10 @@ textarea{resize:vertical;width:100%;min-height:120px;font-family:var(--remotehan
 input[type=checkbox]{accent-color:var(--remotehand-accent,#70a7e8)}
 input[type=range]{padding:0;border:0;background:transparent;accent-color:var(--remotehand-accent,#70a7e8)}
 [hidden]{display:none!important}
-.app-shell{min-height:100%;display:flex;flex-direction:column}
-.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--remotehand-border,#2b3540);background:var(--remotehand-surface,#171d24);position:sticky;top:0;z-index:5}
-.topbar h1{margin:1px 0 0;font-size:18px}.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--remotehand-muted-text,#8c99a8)}
-.view{padding:18px;min-width:0}.intro{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}.intro h2{margin:0 0 5px;font-size:22px}.intro p{margin:0;color:var(--remotehand-muted-text,#9ba8b7)}
+.app-shell{width:100%;max-width:none;min-height:100%;margin:0;padding:12px 10px 18px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+.topbar h1{margin:0;font-size:20px}.intro h2{margin:0;font-size:14px}
+.view{padding:0;min-width:0}.intro{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
 .badge{border:1px solid var(--remotehand-border,#3a4754);border-radius:999px;padding:5px 9px;color:var(--remotehand-muted-text,#a3afbb);white-space:nowrap}
 .category{margin:20px 0 10px}.category:first-of-type{margin-top:0}.category h3{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--remotehand-muted-text,#8e9ba9)}
 .tool-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
@@ -60,19 +60,19 @@ input[type=range]{padding:0;border:0;background:transparent;accent-color:var(--r
 .image-result{display:grid;grid-template-columns:180px minmax(0,1fr);gap:14px;align-items:start;margin-top:14px}.image-thumb{width:180px;height:180px;object-fit:contain;border:1px solid var(--remotehand-border,#33404d);border-radius:10px;background:var(--remotehand-terminal-background,#0d1318);cursor:pointer}.reveal-link{background:transparent;border:0;padding:0;min-height:0;text-align:left;color:var(--remotehand-accent-text,#9ec7ea);text-decoration:underline;cursor:pointer;word-break:break-all}.image-meta{display:grid;gap:6px;margin-top:10px}.image-meta-row{display:flex;gap:8px;flex-wrap:wrap;color:var(--remotehand-muted-text,#9ba8b7)}.image-meta-row strong{color:var(--remotehand-text,#e7edf5)}
 small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a4);line-height:1.45}
 @media(max-width:900px){.tool-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-3{grid-template-columns:1fr}}
-@media(max-width:620px){.view{padding:12px}.topbar{padding:10px 12px}.intro{flex-direction:column}.tool-grid,.grid-2,.json-workbench,.guide-grid{grid-template-columns:1fr}.tool-card{min-height:96px}.tool-head{flex-direction:column}.tool-head button{align-self:flex-start}.json-panel{height:auto;min-height:auto;overflow:visible}.json-workbench{grid-template-rows:auto}.json-workbench textarea,.json-preview{min-height:300px;max-height:420px}.image-result{grid-template-columns:1fr}.image-thumb{width:100%;height:220px}}
+@media(max-width:620px){.intro{flex-direction:row}.tool-grid,.grid-2,.json-workbench,.guide-grid{grid-template-columns:1fr}.tool-card{min-height:96px}.tool-head{flex-direction:column}.tool-head button{align-self:flex-start}.json-panel{height:auto;min-height:auto;overflow:visible}.json-workbench{grid-template-rows:auto}.json-workbench textarea,.json-preview{min-height:300px;max-height:420px}.image-result{grid-template-columns:1fr}.image-thumb{width:100%;height:220px}}
 </style>
 </head>
 <body>
 <div class="app-shell">
 <header class="topbar">
-  <div><div class="eyebrow">RemoteHand Plugin</div><h1 id="viewTitle">Toolbox</h1></div>
+  <h1 id="viewTitle">Toolbox</h1>
   <button id="backBtn" class="ghost" type="button" hidden>← Toolbox</button>
 </header>
 
 <main id="homeView" class="view">
   <section class="intro">
-    <div><h2>RemoteHand Toolbox</h2><p>Useful everyday, developer, network, image, and media utilities in one place.</p></div>
+    <h2>All Tools</h2>
     <span class="badge">12 built-in tools</span>
   </section>
 
@@ -107,7 +107,7 @@ small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a
 
 <main id="toolView" class="view" hidden>
   <section class="tool-head">
-    <div><h2 id="toolTitle"></h2><p id="toolDescription"></p></div>
+    <div><p id="toolDescription"></p></div>
   </section>
   <div id="toolBody"></div>
 </main>
@@ -230,7 +230,6 @@ small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a
       <img id="imagePreview" class="image-thumb" alt="Converted image preview" title="Show generated image in File Explorer">
       <div><div class="label">Generated image</div><button id="imageReveal" class="reveal-link" type="button"></button><div id="imageMeta" class="image-meta"></div><small class="note">Click the thumbnail or saved path to open File Explorer with this image selected.</small></div>
     </div>
-    <small class="note">GIF input is supported as a static image conversion. Animated GIF editing is outside the v0.1.0 scope.</small>
   </section>
 </template>
 
@@ -251,7 +250,6 @@ const request = (method, params = null) => {
 
 const homeView = document.getElementById("homeView");
 const toolView = document.getElementById("toolView");
-const toolTitle = document.getElementById("toolTitle");
 const toolDescription = document.getElementById("toolDescription");
 const toolBody = document.getElementById("toolBody");
 const backBtn = document.getElementById("backBtn");
@@ -282,7 +280,6 @@ function showTool(id) {
   toolView.hidden = false;
   backBtn.hidden = false;
   viewTitle.textContent = tool.title;
-  toolTitle.textContent = tool.title;
   toolDescription.textContent = tool.description;
   toolBody.replaceChildren(document.getElementById(tool.template).content.cloneNode(true));
   const cleanup = tool.init();
