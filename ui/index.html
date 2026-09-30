@@ -57,7 +57,7 @@ input[type=range]{padding:0;border:0;background:transparent;accent-color:var(--r
 .guide h3{margin:0 0 8px;font-size:13px}.guide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 16px;color:var(--remotehand-muted-text,#9ba8b7)}.guide code{color:var(--remotehand-accent-text,#9ec7ea)}
 .example-buttons{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.example-buttons button{min-height:30px;padding:4px 8px}
 .port-legend{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}.port-chip{padding:4px 7px;border:1px solid var(--remotehand-border,#35424e);border-radius:999px;background:var(--remotehand-terminal-background,#10161c);color:var(--remotehand-muted-text,#a0adba);font-size:11px}.port-chip strong{color:var(--remotehand-text,#e7edf5)}
-.image-result{display:grid;grid-template-columns:180px minmax(0,1fr);gap:14px;align-items:start;margin-top:14px}.image-thumb{width:180px;height:180px;object-fit:contain;border:1px solid var(--remotehand-border,#33404d);border-radius:10px;background:var(--remotehand-terminal-background,#0d1318);cursor:pointer}.reveal-link{background:transparent;border:0;padding:0;min-height:0;text-align:left;color:var(--remotehand-accent-text,#9ec7ea);text-decoration:underline;cursor:pointer;word-break:break-all}
+.image-result{display:grid;grid-template-columns:180px minmax(0,1fr);gap:14px;align-items:start;margin-top:14px}.image-thumb{width:180px;height:180px;object-fit:contain;border:1px solid var(--remotehand-border,#33404d);border-radius:10px;background:var(--remotehand-terminal-background,#0d1318);cursor:pointer}.reveal-link{background:transparent;border:0;padding:0;min-height:0;text-align:left;color:var(--remotehand-accent-text,#9ec7ea);text-decoration:underline;cursor:pointer;word-break:break-all}.image-meta{display:grid;gap:6px;margin-top:10px}.image-meta-row{display:flex;gap:8px;flex-wrap:wrap;color:var(--remotehand-muted-text,#9ba8b7)}.image-meta-row strong{color:var(--remotehand-text,#e7edf5)}
 small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a4);line-height:1.45}
 @media(max-width:900px){.tool-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-3{grid-template-columns:1fr}}
 @media(max-width:620px){.view{padding:12px}.topbar{padding:10px 12px}.intro{flex-direction:column}.tool-grid,.grid-2,.json-workbench,.guide-grid{grid-template-columns:1fr}.tool-card{min-height:96px}.tool-head{flex-direction:column}.tool-head button{align-self:flex-start}.json-panel{min-height:auto}.json-workbench textarea,.json-preview{min-height:300px}.image-result{grid-template-columns:1fr}.image-thumb{width:100%;height:220px}}
@@ -215,7 +215,7 @@ small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a
     <div class="actions"><button id="imagePick">Choose image…</button><button id="imageConvert" class="primary" disabled>Convert &amp; Save…</button></div><div id="imageStatus" class="status"></div>
     <div id="imageResult" class="image-result" hidden>
       <img id="imagePreview" class="image-thumb" alt="Converted image preview" title="Show generated image in File Explorer">
-      <div><div class="label">Generated image</div><button id="imageReveal" class="reveal-link" type="button"></button><small class="note">Click the thumbnail or saved path to open File Explorer with this image selected.</small></div>
+      <div><div class="label">Generated image</div><button id="imageReveal" class="reveal-link" type="button"></button><div id="imageMeta" class="image-meta"></div><small class="note">Click the thumbnail or saved path to open File Explorer with this image selected.</small></div>
     </div>
     <small class="note">GIF input is supported as a static image conversion. Animated GIF editing is outside the v0.1.0 scope.</small>
   </section>
@@ -303,6 +303,21 @@ function setStatus(id, text, kind="") {
   el.className = "status" + (kind ? " " + kind : "");
 }
 
+function bindRunKey(element, action, options = {}) {
+  if (!element) return;
+  element.addEventListener("keydown", event => {
+    if (event.isComposing || event.repeat) return;
+    const multiline = element.tagName === "TEXTAREA";
+    const allowed = multiline
+      ? event.key === "Enter" && (event.ctrlKey || event.metaKey)
+      : event.key === "Enter" && !event.shiftKey && !event.altKey;
+    if (!allowed) return;
+    if (options.requireCtrl && !(event.ctrlKey || event.metaKey)) return;
+    event.preventDefault();
+    action();
+  });
+}
+
 function secureRandomInt(max) {
   if (!Number.isInteger(max) || max <= 0) throw new Error("Invalid random range");
   const limit = Math.floor(0x100000000 / max) * max;
@@ -339,6 +354,7 @@ function initPassword() {
     document.getElementById("pwOutput").textContent = shuffleSecure(chars).join("");
     setStatus("pwStatus","Generated with Web Crypto randomness.","success");
   });
+  [length,document.getElementById("pwLower"),document.getElementById("pwUpper"),document.getElementById("pwNumber"),document.getElementById("pwSymbol")].forEach(el=>bindRunKey(el,()=>document.getElementById("pwGenerate").click()));
   update();
   document.getElementById("pwGenerate").click();
 }
@@ -358,6 +374,7 @@ function initBase64() {
   document.getElementById("b64Encode").onclick=()=>{try{output.value=bytesToBase64(new TextEncoder().encode(input.value));setStatus("b64Status","Encoded.","success")}catch(e){setStatus("b64Status",String(e),"error")}};
   document.getElementById("b64Decode").onclick=()=>{try{output.value=new TextDecoder("utf-8",{fatal:true}).decode(base64ToBytes(input.value));setStatus("b64Status","Decoded UTF-8 text.","success")}catch(e){setStatus("b64Status","Invalid Base64 or UTF-8 data: "+e,"error")}};
   document.getElementById("b64Swap").onclick=()=>{input.value=output.value;output.value="";setStatus("b64Status","")};
+  bindRunKey(input,()=>document.getElementById("b64Encode").click());
 }
 
 function initUrl() {
@@ -365,6 +382,7 @@ function initUrl() {
   document.getElementById("urlEncode").onclick=()=>{try{output.value=encodeURIComponent(input.value);setStatus("urlStatus","Encoded.","success")}catch(e){setStatus("urlStatus",String(e),"error")}};
   document.getElementById("urlDecode").onclick=()=>{try{output.value=decodeURIComponent(input.value.replace(/\+/g,"%20"));setStatus("urlStatus","Decoded.","success")}catch(e){setStatus("urlStatus","Invalid percent-encoding: "+e,"error")}};
   document.getElementById("urlSwap").onclick=()=>{input.value=output.value;output.value="";setStatus("urlStatus","")};
+  bindRunKey(input,()=>document.getElementById("urlEncode").click());
 }
 
 function initHash() {
@@ -372,6 +390,7 @@ function initHash() {
   const algo=()=>document.getElementById("hashAlgorithm").value;
   document.getElementById("hashTextBtn").onclick=async()=>{setStatus("hashStatus","Hashing…");try{const r=await request("hash.text",{text:document.getElementById("hashText").value,algorithm:algo()});document.getElementById("hashOutput").textContent=r.digest;setStatus("hashStatus","Text hash calculated.","success")}catch(e){setStatus("hashStatus",String(e),"error")}};
   document.getElementById("hashFileBtn").onclick=async()=>{try{const pick=await request("file.pick");if(!pick||pick.opened===false||!pick.path)return;selectedFile=pick.path;document.getElementById("hashFilePath").textContent=selectedFile;setStatus("hashStatus","Hashing file…");const r=await request("hash.file",{path:selectedFile,algorithm:algo()});document.getElementById("hashOutput").textContent=r.digest;setStatus("hashStatus","File checksum calculated.","success")}catch(e){setStatus("hashStatus",String(e),"error")}};
+  bindRunKey(document.getElementById("hashText"),()=>document.getElementById("hashTextBtn").click());
 }
 
 function localDateTimeValue(date) {
@@ -384,6 +403,8 @@ function initTimestamp() {
   document.getElementById("timeNow").onclick=()=>{const d=new Date();dateInput.value=localDateTimeValue(d);epochInput.value=Math.floor(d.getTime()/1000);showDate(d);setStatus("timeStatus","Current time loaded.","success")};
   document.getElementById("dateToEpoch").onclick=()=>{const d=new Date(dateInput.value);if(Number.isNaN(d.getTime())){setStatus("timeStatus","Enter a valid local date/time.","error");return}epochInput.value=Math.floor(d.getTime()/1000);showDate(d);setStatus("timeStatus","Converted.","success")};
   document.getElementById("epochToDate").onclick=()=>{const raw=epochInput.value.trim();if(!/^-?\d+$/.test(raw)){setStatus("timeStatus","Enter an integer Unix timestamp.","error");return}let n=Number(raw);if(!Number.isSafeInteger(n)){setStatus("timeStatus","Timestamp is outside the safe integer range.","error");return}if(Math.abs(n)<100000000000)n*=1000;const d=new Date(n);if(Number.isNaN(d.getTime())){setStatus("timeStatus","Timestamp is outside the supported date range.","error");return}dateInput.value=localDateTimeValue(d);showDate(d);setStatus("timeStatus","Converted.","success")};
+  bindRunKey(dateInput,()=>document.getElementById("dateToEpoch").click());
+  bindRunKey(epochInput,()=>document.getElementById("epochToDate").click());
   document.getElementById("timeNow").click();
 }
 
@@ -409,10 +430,11 @@ function renderJsonPreview(value) {
 function initJson() {
   const input=document.getElementById("jsonInput");
   const parse=()=>JSON.parse(input.value);
-  const valid=(message,mutate)=>{try{const value=parse();if(mutate)input.value=mutate(value);renderJsonPreview(value);setStatus("jsonStatus",message,"success")}catch(e){document.getElementById("jsonPreview").textContent="Invalid JSON";setStatus("jsonStatus",String(e),"error")}};
+  const valid=(message,mutate)=>{try{const value=parse();if(mutate)input.value=mutate(value);renderJsonPreview(value);requestAnimationFrame(()=>{input.scrollTop=0;input.scrollLeft=0;input.setSelectionRange(0,0);const preview=document.getElementById("jsonPreview");preview.scrollTop=0;preview.scrollLeft=0});setStatus("jsonStatus",message,"success")}catch(e){document.getElementById("jsonPreview").textContent="Invalid JSON";setStatus("jsonStatus",String(e),"error")}};
   document.getElementById("jsonFormat").onclick=()=>valid("Valid JSON. Formatted with 2-space indentation.",value=>JSON.stringify(value,null,2));
   document.getElementById("jsonCompact").onclick=()=>valid("Valid JSON. Compacted.",value=>JSON.stringify(value));
   document.getElementById("jsonValidate").onclick=()=>valid("Valid JSON.");
+  bindRunKey(input,()=>document.getElementById("jsonFormat").click());
 }
 function initRegex() {
   const examples={
@@ -434,9 +456,14 @@ function initRegex() {
       setStatus("regexStatus",matches.length+(matches.length===1?" match.":" matches.")+(matches.length>=1000?" Stopped at 1000.":""),"success");
     }catch(e){out.textContent="";setStatus("regexStatus",String(e),"error")}
   };
+  bindRunKey(document.getElementById("regexText"),()=>document.getElementById("regexRun").click());
+  bindRunKey(document.getElementById("regexPattern"),()=>document.getElementById("regexRun").click());
+  bindRunKey(document.getElementById("regexFlags"),()=>document.getElementById("regexRun").click());
 }
 function initPing() {
-  document.getElementById("pingRun").onclick=async()=>{const btn=document.getElementById("pingRun");btn.disabled=true;setStatus("pingStatus","Pinging…");document.getElementById("pingOutput").textContent="";try{const r=await request("network.ping",{target:document.getElementById("pingTarget").value});document.getElementById("pingOutput").textContent=r.output;setStatus("pingStatus","Ping completed.","success")}catch(e){setStatus("pingStatus",String(e),"error")}finally{btn.disabled=false}};
+  const target=document.getElementById("pingTarget"),run=document.getElementById("pingRun");
+  run.onclick=async()=>{const btn=run;btn.disabled=true;setStatus("pingStatus","Pinging…");document.getElementById("pingOutput").textContent="";try{const r=await request("network.ping",{target:target.value});document.getElementById("pingOutput").textContent=r.output;setStatus("pingStatus","Ping completed.","success")}catch(e){setStatus("pingStatus",String(e),"error")}finally{btn.disabled=false}};
+  bindRunKey(target,()=>run.click());
 }
 
 function traceLines(raw) {
@@ -449,7 +476,9 @@ function traceLines(raw) {
   return hops;
 }
 function initTraceroute() {
-  document.getElementById("traceRun").onclick=async()=>{const btn=document.getElementById("traceRun");btn.disabled=true;setStatus("traceStatus","Tracing route… this can take a little while.");document.getElementById("traceHops").replaceChildren();document.getElementById("traceRaw").textContent="";try{const r=await request("network.traceroute",{target:document.getElementById("traceTarget").value});document.getElementById("traceRaw").textContent=r.output;const hops=traceLines(r.output);const box=document.getElementById("traceHops");if(hops.length){for(const hop of hops){const row=document.createElement("div");row.className="hop";const n=document.createElement("strong");n.textContent=hop.n;const text=document.createElement("span");text.textContent=hop.text;row.append(n,text);box.appendChild(row)}}else{box.textContent="Route completed; use Raw output for details."}setStatus("traceStatus","Traceroute completed.","success")}catch(e){setStatus("traceStatus",String(e),"error")}finally{btn.disabled=false}};
+  const target=document.getElementById("traceTarget"),run=document.getElementById("traceRun");
+  run.onclick=async()=>{const btn=run;btn.disabled=true;setStatus("traceStatus","Tracing route… this can take a little while.");document.getElementById("traceHops").replaceChildren();document.getElementById("traceRaw").textContent="";try{const r=await request("network.traceroute",{target:document.getElementById("traceTarget").value});document.getElementById("traceRaw").textContent=r.output;const hops=traceLines(r.output);const box=document.getElementById("traceHops");if(hops.length){for(const hop of hops){const row=document.createElement("div");row.className="hop";const n=document.createElement("strong");n.textContent=hop.n;const text=document.createElement("span");text.textContent=hop.text;row.append(n,text);box.appendChild(row)}}else{box.textContent="Route completed; use Raw output for details."}setStatus("traceStatus","Traceroute completed.","success")}catch(e){setStatus("traceStatus",String(e),"error")}finally{btn.disabled=false}};
+  bindRunKey(target,()=>run.click());
 }
 
 function initPorts() {
@@ -470,16 +499,19 @@ function initPorts() {
   const poll=async()=>{if(stopped||!jobId)return;try{const st=await request("port.status",{id:jobId});render(st);if(st.state==="running")timer=setTimeout(poll,250)}catch(e){summary.textContent=String(e);summary.className="status error";start.disabled=false;cancel.hidden=true}};
   start.onclick=async()=>{start.disabled=true;cancel.hidden=false;out.textContent="";progress.style.width="0%";summary.className="status";summary.textContent="Starting scan…";try{const st=await request("port.start",{target:document.getElementById("portTarget").value,ports:portsInput.value,timeoutMs:Number(document.getElementById("portTimeout").value)});jobId=st.id;render(st);timer=setTimeout(poll,100)}catch(e){summary.textContent=String(e);summary.className="status error";start.disabled=false;cancel.hidden=true}};
   cancel.onclick=async()=>{if(!jobId)return;cancel.disabled=true;try{const st=await request("port.cancel",{id:jobId});render(st)}catch(e){summary.textContent=String(e);summary.className="status error"}finally{cancel.disabled=false}};
+  [document.getElementById("portTarget"),portsInput,document.getElementById("portTimeout"),preset].forEach(el=>bindRunKey(el,()=>start.click()));
   renderLegend();
   return()=>{stopped=true;if(timer)clearTimeout(timer)};
 }
 function initImage() {
   let path="",savedPath="";
-  const pick=document.getElementById("imagePick"), convert=document.getElementById("imageConvert"), result=document.getElementById("imageResult"), preview=document.getElementById("imagePreview"), reveal=document.getElementById("imageReveal");
+  const pick=document.getElementById("imagePick"), convert=document.getElementById("imageConvert"), result=document.getElementById("imageResult"), preview=document.getElementById("imagePreview"), reveal=document.getElementById("imageReveal"), meta=document.getElementById("imageMeta");
+  const formatBytes=value=>{let bytes=Number(value)||0;if(bytes<1024)return bytes+" B";const units=["KB","MB","GB"];let index=-1;do{bytes/=1024;index++}while(bytes>=1024&&index<units.length-1);return bytes.toFixed(bytes>=100?0:bytes>=10?1:2)+" "+units[index]};
+  const renderMeta=r=>{meta.replaceChildren();const add=(label,value)=>{const row=document.createElement("div");row.className="image-meta-row";const strong=document.createElement("strong");strong.textContent=label;row.append(strong,document.createTextNode(value));meta.append(row)};add("Output",r.output.width+" × "+r.output.height+" · "+r.output.format+" · "+formatBytes(r.output.bytes));add("Input",r.input.width+" × "+r.input.height+" · "+r.input.format+" · "+formatBytes(r.input.bytes));};
   const revealSaved=async()=>{if(!savedPath)return;try{await request("image.reveal",{path:savedPath})}catch(e){setStatus("imageStatus",String(e),"error")}};
   preview.onclick=revealSaved;reveal.onclick=revealSaved;
   pick.onclick=async()=>{try{const r=await request("image.pick");if(!r||r.opened===false||!r.path)return;path=r.path;document.getElementById("imagePath").textContent=path;convert.disabled=false;result.hidden=true;setStatus("imageStatus","Image selected.","success")}catch(e){setStatus("imageStatus",String(e),"error")}};
-  convert.onclick=async()=>{if(!path)return;convert.disabled=true;setStatus("imageStatus","Converting…");try{const r=await request("image.convert",{path,format:document.getElementById("imageFormat").value});if(r&&r.saved===false){setStatus("imageStatus","Save cancelled.");return}savedPath=r.path;preview.src=r.preview;reveal.textContent=r.path;result.hidden=false;setStatus("imageStatus","Image converted successfully.","success")}catch(e){setStatus("imageStatus",String(e),"error")}finally{convert.disabled=false}};
+  convert.onclick=async()=>{if(!path)return;convert.disabled=true;setStatus("imageStatus","Converting…");try{const r=await request("image.convert",{path,format:document.getElementById("imageFormat").value});if(r&&r.saved===false){setStatus("imageStatus","Save cancelled.");return}savedPath=r.path;preview.src=r.preview;reveal.textContent=r.path;renderMeta(r);result.hidden=false;setStatus("imageStatus","Image converted successfully.","success")}catch(e){setStatus("imageStatus",String(e),"error")}finally{convert.disabled=false}};
 }
 
 })();
