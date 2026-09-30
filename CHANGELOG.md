@@ -35,3 +35,6 @@ This candidate is for development and manual acceptance testing. It is not a pub
 
 - Fixed JSON Formatter pane sizing so editable JSON and syntax-highlighted preview each scroll independently.
 - Added Lorem Ipsum Generator with words, sentences, and paragraphs modes.
+
+- Added more spacing between Lorem Ipsum controls and generated output.
+- Added a hidden Lorem easter egg that only appears for Paragraphs × 10.
