@@ -2,9 +2,10 @@
 
 ## 0.1.0 - Unreleased
 
-Initial RemoteHand Toolbox candidate with 11 curated built-in utilities:
+Initial RemoteHand Toolbox candidate with 12 curated built-in utilities:
 
 - Password Generator
+- Lorem Ipsum Generator
 - Base64 Encode / Decode
 - URL Encode / Decode
 - Hash / Checksum
@@ -31,3 +32,6 @@ This candidate is for development and manual acceptance testing. It is not a pub
 - Fixed JSON Format/Compact so both editor and highlighted preview reset to the top after content is rewritten.
 - Added Enter-to-run shortcuts for single-line tools and Ctrl+Enter primary actions for multiline editors.
 - Added Image Converter input/output dimensions, format, and file-size details.
+
+- Fixed JSON Formatter pane sizing so editable JSON and syntax-highlighted preview each scroll independently.
+- Added Lorem Ipsum Generator with words, sentences, and paragraphs modes.
