@@ -1,6 +1,15 @@
 # Changelog
 
-## 0.1.0 - Unreleased
+## 0.1.1 - Unreleased
+
+### Improved
+
+- Normalized the Toolbox launcher header to match the visual rhythm of other RemoteHand plugins.
+- Removed the redundant `REMOTEHAND PLUGIN` eyebrow and oversized marketing-style launcher heading.
+- Added a compact `All Tools` row while keeping the existing `12 built-in tools` badge.
+- Kept the launcher intentionally single-page: no placeholder Favorites or Settings tabs were added.
+
+## 0.1.0
 
 Initial RemoteHand Toolbox candidate with 12 curated built-in utilities:
 
@@ -17,7 +26,6 @@ Initial RemoteHand Toolbox candidate with 12 curated built-in utilities:
 - Port Scanner
 - Image Converter
 
-This candidate is for development and manual acceptance testing. It is not a published release.
 
 ### Acceptance polish
 
