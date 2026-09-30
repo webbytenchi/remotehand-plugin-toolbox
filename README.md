@@ -6,11 +6,12 @@ Toolbox intentionally ships a built-in catalog rather than a second plugin syste
 
 ## v0.1.0 scope
 
-The first Toolbox release contains 11 built-in tools:
+The first Toolbox release contains 12 built-in tools:
 
 ### Generators
 
 - **Password Generator** — cryptographically random passwords with configurable length and character sets.
+- **Lorem Ipsum Generator** — placeholder words, sentences, or paragraphs for layouts and mockups.
 
 ### Encoding and data
 
