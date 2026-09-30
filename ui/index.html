@@ -48,10 +48,10 @@ input[type=range]{padding:0;border:0;background:transparent;accent-color:var(--r
 .hops{display:grid;gap:6px}.hop{display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--remotehand-border,#2c3742);border-radius:8px;background:var(--remotehand-terminal-background,#10161c)}.hop strong{text-align:center;color:var(--remotehand-accent-text,#9ec7ea)}.hop span{font-family:var(--remotehand-terminal-font-family,Consolas,monospace);white-space:pre-wrap}
 .match{padding:8px 0;border-bottom:1px solid var(--remotehand-border,#29343f)}.match:last-child{border-bottom:0}.match code{color:var(--remotehand-accent-text,#9ec7ea)}
 .file-path{word-break:break-all;color:var(--remotehand-muted-text,#a1adba);font-family:var(--remotehand-terminal-font-family,Consolas,monospace)}
-.json-panel{min-height:calc(100vh - 190px);display:flex;flex-direction:column}
-.json-workbench{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;flex:1;min-height:420px;margin-top:12px}
-.json-workbench .field{min-height:0}.json-workbench textarea{height:100%;min-height:420px}
-.json-preview{margin:0;height:100%;min-height:420px;overflow:auto;white-space:pre-wrap;word-break:break-word;padding:11px;border:1px solid var(--remotehand-border,#293541);border-radius:9px;background:var(--remotehand-terminal-background,#0d1318);font-family:var(--remotehand-terminal-font-family,Consolas,monospace);line-height:1.5}
+.json-panel{height:calc(100vh - 190px);min-height:520px;display:flex;flex-direction:column;overflow:hidden}
+.json-workbench{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr);gap:12px;flex:1;min-height:0;margin-top:12px}
+.json-workbench .field{min-height:0;display:flex;flex-direction:column}.json-workbench textarea{flex:1;height:auto;min-height:0;overflow:auto}
+.json-preview{margin:0;flex:1;height:auto;min-height:0;overflow:auto;white-space:pre-wrap;word-break:break-word;padding:11px;border:1px solid var(--remotehand-border,#293541);border-radius:9px;background:var(--remotehand-terminal-background,#0d1318);font-family:var(--remotehand-terminal-font-family,Consolas,monospace);line-height:1.5}
 .json-key{color:var(--remotehand-accent-text,#9ec7ea)}.json-string{color:var(--remotehand-success-text,#91cfaa)}.json-number{color:var(--remotehand-warning-text,#e5b36c)}.json-literal{color:var(--remotehand-accent,#a58ddd)}
 .guide{margin-top:12px;padding:12px;border:1px solid var(--remotehand-border,#303b46);border-radius:10px;background:var(--remotehand-terminal-background,#10161c)}
 .guide h3{margin:0 0 8px;font-size:13px}.guide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 16px;color:var(--remotehand-muted-text,#9ba8b7)}.guide code{color:var(--remotehand-accent-text,#9ec7ea)}
@@ -60,7 +60,7 @@ input[type=range]{padding:0;border:0;background:transparent;accent-color:var(--r
 .image-result{display:grid;grid-template-columns:180px minmax(0,1fr);gap:14px;align-items:start;margin-top:14px}.image-thumb{width:180px;height:180px;object-fit:contain;border:1px solid var(--remotehand-border,#33404d);border-radius:10px;background:var(--remotehand-terminal-background,#0d1318);cursor:pointer}.reveal-link{background:transparent;border:0;padding:0;min-height:0;text-align:left;color:var(--remotehand-accent-text,#9ec7ea);text-decoration:underline;cursor:pointer;word-break:break-all}.image-meta{display:grid;gap:6px;margin-top:10px}.image-meta-row{display:flex;gap:8px;flex-wrap:wrap;color:var(--remotehand-muted-text,#9ba8b7)}.image-meta-row strong{color:var(--remotehand-text,#e7edf5)}
 small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a4);line-height:1.45}
 @media(max-width:900px){.tool-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-3{grid-template-columns:1fr}}
-@media(max-width:620px){.view{padding:12px}.topbar{padding:10px 12px}.intro{flex-direction:column}.tool-grid,.grid-2,.json-workbench,.guide-grid{grid-template-columns:1fr}.tool-card{min-height:96px}.tool-head{flex-direction:column}.tool-head button{align-self:flex-start}.json-panel{min-height:auto}.json-workbench textarea,.json-preview{min-height:300px}.image-result{grid-template-columns:1fr}.image-thumb{width:100%;height:220px}}
+@media(max-width:620px){.view{padding:12px}.topbar{padding:10px 12px}.intro{flex-direction:column}.tool-grid,.grid-2,.json-workbench,.guide-grid{grid-template-columns:1fr}.tool-card{min-height:96px}.tool-head{flex-direction:column}.tool-head button{align-self:flex-start}.json-panel{height:auto;min-height:auto;overflow:visible}.json-workbench{grid-template-rows:auto}.json-workbench textarea,.json-preview{min-height:300px;max-height:420px}.image-result{grid-template-columns:1fr}.image-thumb{width:100%;height:220px}}
 </style>
 </head>
 <body>
@@ -73,12 +73,13 @@ small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a
 <main id="homeView" class="view">
   <section class="intro">
     <div><h2>RemoteHand Toolbox</h2><p>Useful everyday, developer, network, image, and media utilities in one place.</p></div>
-    <span class="badge">11 built-in tools</span>
+    <span class="badge">12 built-in tools</span>
   </section>
 
   <section class="category"><h3>Generators</h3></section>
   <section class="tool-grid">
     <article class="tool-card" data-tool="password" tabindex="0"><div class="tool-icon">Aa</div><div><h4>Password Generator</h4><p>Create secure random passwords with configurable character sets.</p></div></article>
+    <article class="tool-card" data-tool="lorem" tabindex="0"><div class="tool-icon">¶</div><div><h4>Lorem Ipsum Generator</h4><p>Generate placeholder words, sentences, or paragraphs for layouts and mockups.</p></div></article>
   </section>
 
   <section class="category"><h3>Encoding &amp; Data</h3></section>
@@ -121,6 +122,18 @@ small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a
     <div class="actions"><button id="pwGenerate" class="primary" type="button">Generate</button></div>
     <div id="pwOutput" class="output password-output"></div>
     <div id="pwStatus" class="status"></div>
+  </section>
+</template>
+
+<template id="loremTemplate">
+  <section class="panel">
+    <div class="grid-2">
+      <label class="field"><span>Generate</span><select id="loremUnit"><option value="paragraphs">Paragraphs</option><option value="sentences">Sentences</option><option value="words">Words</option></select></label>
+      <label class="field"><span>Count</span><input id="loremCount" type="number" min="1" max="100" value="3"></label>
+    </div>
+    <div class="actions"><button id="loremGenerate" class="primary" type="button">Generate</button></div>
+    <textarea id="loremOutput" readonly style="min-height:260px"></textarea>
+    <div id="loremStatus" class="status"></div>
   </section>
 </template>
 
@@ -247,6 +260,7 @@ let cleanupCurrent = () => {};
 
 const tools = {
   password: { title:"Password Generator", description:"Create cryptographically random passwords with your preferred character sets.", template:"passwordTemplate", init:initPassword },
+  lorem: { title:"Lorem Ipsum Generator", description:"Generate placeholder words, sentences, or paragraphs for layouts and mockups.", template:"loremTemplate", init:initLorem },
   base64: { title:"Base64 Encode / Decode", description:"Encode and decode UTF-8 text using Base64.", template:"base64Template", init:initBase64 },
   url: { title:"URL Encode / Decode", description:"Encode or decode URL components.", template:"urlTemplate", init:initUrl },
   hash: { title:"Hash / Checksum", description:"Calculate MD5, SHA-1, SHA-256, or SHA-512 for text and files.", template:"hashTemplate", init:initHash },
@@ -357,6 +371,45 @@ function initPassword() {
   [length,document.getElementById("pwLower"),document.getElementById("pwUpper"),document.getElementById("pwNumber"),document.getElementById("pwSymbol")].forEach(el=>bindRunKey(el,()=>document.getElementById("pwGenerate").click()));
   update();
   document.getElementById("pwGenerate").click();
+}
+
+function initLorem() {
+  const words=("lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure dolor reprehenderit voluptate velit esse cillum fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt culpa qui officia deserunt mollit anim id est laborum").split(" ");
+  const unit=document.getElementById("loremUnit"), count=document.getElementById("loremCount"), output=document.getElementById("loremOutput"), button=document.getElementById("loremGenerate");
+  const sentence=wordCount=>{
+    const picked=[];
+    for(let i=0;i<wordCount;i++) picked.push(words[secureRandomInt(words.length)]);
+    let text=picked.join(" ");
+    return text.charAt(0).toUpperCase()+text.slice(1)+".";
+  };
+  const paragraph=()=>{
+    const sentences=4+secureRandomInt(3);
+    const parts=[];
+    for(let i=0;i<sentences;i++) parts.push(sentence(8+secureRandomInt(8)));
+    return parts.join(" ");
+  };
+  button.onclick=()=>{
+    const n=Math.max(1,Math.min(100,Number(count.value)||1));
+    count.value=String(n);
+    let text="";
+    if(unit.value==="words"){
+      const picked=[];
+      for(let i=0;i<n;i++) picked.push(words[secureRandomInt(words.length)]);
+      text=picked.join(" ");
+    }else if(unit.value==="sentences"){
+      const parts=[];
+      for(let i=0;i<n;i++) parts.push(sentence(8+secureRandomInt(8)));
+      text=parts.join(" ");
+    }else{
+      const parts=[];
+      for(let i=0;i<n;i++) parts.push(paragraph());
+      text=parts.join("\n\n");
+    }
+    output.value=text;
+    setStatus("loremStatus","Generated "+n+" "+unit.value+".","success");
+  };
+  [unit,count].forEach(el=>bindRunKey(el,()=>button.click()));
+  button.click();
 }
 
 function bytesToBase64(bytes) {
