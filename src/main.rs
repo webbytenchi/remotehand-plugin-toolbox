@@ -5,7 +5,7 @@ use serde_json::{json, Value};
 use sha1::Sha1;
 use sha2::{Digest, Sha256, Sha512};
 use std::collections::{BTreeMap, BTreeSet};
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{self, Cursor, ErrorKind, Read, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
@@ -557,6 +557,19 @@ fn convert_image(input: &Path, output: &Path, format: &str) -> Result<(), String
         .map_err(|error| format!("cannot save {}: {error}", output.to_string_lossy()))
 }
 
+fn image_details(path: &Path, format_label: &str) -> Result<Value, String> {
+    let image = image::open(path)
+        .map_err(|error| format!("cannot inspect {}: {error}", path.to_string_lossy()))?;
+    let metadata = fs::metadata(path)
+        .map_err(|error| format!("cannot inspect {}: {error}", path.to_string_lossy()))?;
+    Ok(json!({
+        "width": image.width(),
+        "height": image.height(),
+        "bytes": metadata.len(),
+        "format": format_label.to_ascii_uppercase()
+    }))
+}
+
 fn image_preview_data(path: &Path) -> Result<String, String> {
     let image = image::open(path)
         .map_err(|error| format!("cannot preview {}: {error}", path.to_string_lossy()))?
@@ -660,7 +673,19 @@ fn dispatch(
             let output_path = Path::new(output);
             convert_image(&input, output_path, &params.format)?;
             let preview = image_preview_data(output_path)?;
-            Ok(json!({ "saved": true, "path": output, "preview": preview }))
+            let input_format = input
+                .extension()
+                .and_then(|value| value.to_str())
+                .unwrap_or("image");
+            let input_details = image_details(&input, input_format)?;
+            let output_details = image_details(output_path, extension)?;
+            Ok(json!({
+                "saved": true,
+                "path": output,
+                "preview": preview,
+                "input": input_details,
+                "output": output_details
+            }))
         }
         "network.ping" => {
             let target = request.params.get("target").and_then(Value::as_str)
