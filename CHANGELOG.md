@@ -27,3 +27,7 @@ This candidate is for development and manual acceptance testing. It is not a pub
 - Added converted-image thumbnails and reveal-in-file-manager actions.
 - Improved spacing between action buttons and result areas.
 - Removed Media Downloader from v0.1.0 to keep Toolbox self-contained and dependency-free for end users.
+
+- Fixed JSON Format/Compact so both editor and highlighted preview reset to the top after content is rewritten.
+- Added Enter-to-run shortcuts for single-line tools and Ctrl+Enter primary actions for multiline editors.
+- Added Image Converter input/output dimensions, format, and file-size details.
