@@ -4,9 +4,9 @@ RemoteHand Toolbox is a curated collection of practical utilities for RemoteHand
 
 Toolbox intentionally ships a built-in catalog rather than a second plugin system. Specialized features can live as normal RemoteHand plugins; broadly useful utilities can be added to Toolbox in future releases.
 
-## v0.1.0 scope
+## v0.1.1
 
-The first Toolbox release contains 12 built-in tools:
+Toolbox v0.1.1 keeps the same 12 built-in tools as v0.1.0 and normalizes the launcher header to match the rest of RemoteHand.
 
 ### Generators
 
@@ -64,7 +64,7 @@ Every utility is a compact card. Selecting a card opens the tool in-place; **←
 
 ## Permissions
 
-Toolbox v0.1.0 requests:
+Toolbox v0.1.1 requests:
 
 - `network.connect`
 - `network.inspect`
@@ -94,7 +94,7 @@ Toolbox owns:
 - network commands
 - bounded port scanning
 
-There is intentionally no user-defined Toolbox tool API in v0.1.0.
+There is intentionally no user-defined Toolbox tool API in v0.1.1.
 
 ## Build on Windows
 
@@ -115,7 +115,7 @@ The build script creates:
 
 ```text
 dist\remotehand-toolbox-windows-x86_64\
-dist\remotehand-toolbox-v0.1.0-windows-x86_64.zip
+dist\remotehand-toolbox-v0.1.1-windows-x86_64.zip
 dist\SHA256SUMS.txt
 ```
 
