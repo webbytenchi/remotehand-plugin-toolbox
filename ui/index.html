@@ -132,7 +132,7 @@ small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a
       <label class="field"><span>Count</span><input id="loremCount" type="number" min="1" max="100" value="3"></label>
     </div>
     <div class="actions"><button id="loremGenerate" class="primary" type="button">Generate</button></div>
-    <textarea id="loremOutput" readonly style="min-height:260px"></textarea>
+    <textarea id="loremOutput" readonly style="min-height:260px;margin-top:12px"></textarea>
     <div id="loremStatus" class="status"></div>
   </section>
 </template>
@@ -374,7 +374,7 @@ function initPassword() {
 }
 
 function initLorem() {
-  const words=("lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure dolor reprehenderit voluptate velit esse cillum fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt culpa qui officia deserunt mollit anim id est laborum").split(" ");
+  const words=("lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure dolor reprehenderit voluptate velit esse cillum dolore eu fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt culpa qui officia deserunt mollit anim id est laborum").split(" ");
   const unit=document.getElementById("loremUnit"), count=document.getElementById("loremCount"), output=document.getElementById("loremOutput"), button=document.getElementById("loremGenerate");
   const sentence=wordCount=>{
     const picked=[];
@@ -387,6 +387,21 @@ function initLorem() {
     const parts=[];
     for(let i=0;i<sentences;i++) parts.push(sentence(8+secureRandomInt(8)));
     return parts.join(" ");
+  };
+  const addEasterEgg=(paragraphs)=>{
+    if(unit.value!=="paragraphs" || paragraphs.length!==10) return paragraphs;
+    const phrases=["I Love You Andami","Papa"];
+    const used=new Set();
+    for(const phrase of phrases){
+      let index;
+      do{index=secureRandomInt(paragraphs.length)}while(used.has(index)&&used.size<paragraphs.length);
+      used.add(index);
+      const position=secureRandomInt(paragraphs[index].length+1);
+      const left=paragraphs[index].slice(0,position).trimEnd();
+      const right=paragraphs[index].slice(position).trimStart();
+      paragraphs[index]=(left?left+" ":"")+phrase+(right?" "+right:"");
+    }
+    return paragraphs;
   };
   button.onclick=()=>{
     const n=Math.max(1,Math.min(100,Number(count.value)||1));
@@ -403,7 +418,7 @@ function initLorem() {
     }else{
       const parts=[];
       for(let i=0;i<n;i++) parts.push(paragraph());
-      text=parts.join("\n\n");
+      text=addEasterEgg(parts).join("\n\n");
     }
     output.value=text;
     setStatus("loremStatus","Generated "+n+" "+unit.value+".","success");
