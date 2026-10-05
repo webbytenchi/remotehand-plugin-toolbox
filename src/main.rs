@@ -18,7 +18,7 @@ use std::thread;
 use std::time::Duration;
 
 const PLUGIN_ID: &str = "remotehand.toolbox";
-const PLUGIN_VERSION: &str = "0.1.1";
+const PLUGIN_VERSION: &str = "0.1.2";
 const API_VERSION: u32 = 1;
 const MAX_FRAME_BYTES: usize = 16 * 1024 * 1024;
 const MAX_HASH_TEXT_BYTES: usize = 8 * 1024 * 1024;
