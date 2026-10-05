@@ -6,27 +6,27 @@ Toolbox intentionally ships a built-in catalog rather than a second plugin syste
 
 ## v0.1.1
 
-Toolbox v0.1.1 keeps the same 12 built-in tools as v0.1.0 and normalizes the launcher header to match the rest of RemoteHand.
+Toolbox v0.1.1 keeps the same 12 built-in tools as v0.1.0, normalizes the launcher header to match the rest of RemoteHand, adds consistent copy actions for reusable text output, and streams Traceroute results while a trace is still running.
 
 ### Generators
 
-- **Password Generator** — cryptographically random passwords with configurable length and character sets.
-- **Lorem Ipsum Generator** — placeholder words, sentences, or paragraphs for layouts and mockups.
+- **Password Generator** — cryptographically random passwords with configurable length and character sets, with one-click copy.
+- **Lorem Ipsum Generator** — placeholder words, sentences, or paragraphs for layouts and mockups, with one-click copy.
 
 ### Encoding and data
 
-- **Base64 Encode / Decode** — UTF-8-aware text conversion.
-- **URL Encode / Decode** — URL-component escaping and decoding.
-- **Hash / Checksum** — MD5, SHA-1, SHA-256, and SHA-512 for text and files.
+- **Base64 Encode / Decode** — UTF-8-aware text conversion with copyable output.
+- **URL Encode / Decode** — URL-component escaping and decoding with copyable output.
+- **Hash / Checksum** — MD5, SHA-1, SHA-256, and SHA-512 for text and files, with copyable digests.
 - **Timestamp / Unix Epoch** — local date/time, Unix seconds, Unix milliseconds, and UTC conversion.
-- **JSON Formatter / Validator** — validate, pretty-print, and compact JSON.
+- **JSON Formatter / Validator** — validate, pretty-print, and compact JSON with a copyable syntax-highlighted preview.
 - **Regex Tester** — JavaScript-compatible regular-expression matching with indices and capture groups.
 
 ### Network
 
-- **Ping** — operating-system ping with raw results.
-- **Traceroute** — operating-system traceroute/tracert rendered as a hop list with raw output available.
-- **Port Scanner** — single hostname/IP or full IPv4 range, combined with a single port, port range, or comma-separated list. Includes common-port presets and service-name legends. Scans are cancellable and concurrency-bounded. A hostname resolves to one scan target, preferring IPv4 when available.
+- **Ping** — operating-system ping with raw, copyable results.
+- **Traceroute** — operating-system traceroute/tracert rendered progressively as hops arrive, with live raw output and copy support.
+- **Port Scanner** — single hostname/IP or full IPv4 range, combined with a single port, port range, or comma-separated list. Includes common-port presets and service-name legends. Scans are cancellable, concurrency-bounded, and results can be copied. A hostname resolves to one scan target, preferring IPv4 when available.
 
 Port Scanner v0.1.0 limits a single scan to:
 
@@ -100,7 +100,7 @@ There is intentionally no user-defined Toolbox tool API in v0.1.1.
 
 Requirements:
 
-- Rust toolchain compatible with Rust 1.85 or later
+- Rust 1.85 or later. The `image` dependency is pinned to `0.25.8` so the declared Rust 1.85 baseline remains valid.
 - PowerShell
 - a compatible RemoteHand Plugin API v1 host
 
