@@ -6,10 +6,10 @@ use sha1::Sha1;
 use sha2::{Digest, Sha256, Sha512};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File};
-use std::io::{self, Cursor, ErrorKind, Read, Write};
+use std::io::{self, BufRead, BufReader, Cursor, ErrorKind, Read, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::sync::{
     atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
     Arc, Mutex,
@@ -125,6 +125,34 @@ struct PortScanManager {
     next_id: AtomicU64,
     jobs: Mutex<BTreeMap<u64, Arc<PortScanControl>>>,
 }
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct TraceSnapshot {
+    id: u64,
+    state: String,
+    output: String,
+    error: Option<String>,
+}
+
+struct TraceControl {
+    snapshot: Mutex<TraceSnapshot>,
+}
+
+#[derive(Default)]
+struct TraceManager {
+    next_id: AtomicU64,
+    jobs: Mutex<BTreeMap<u64, Arc<TraceControl>>>,
+}
+
+fn append_trace_output(control: &TraceControl, text: &str) {
+    if let Ok(mut snapshot) = control.snapshot.lock() {
+        if !snapshot.output.is_empty() {
+            snapshot.output.push('\n');
+        }
+        snapshot.output.push_str(text.trim_end_matches(['\r', '\n']));
+    }
+}
+
 
 fn write_frame<W: Write, T: Serialize>(writer: &mut W, value: &T) -> Result<(), String> {
     let payload = serde_json::to_vec(value).map_err(|error| error.to_string())?;
@@ -521,19 +549,129 @@ fn ping(target: &str) -> Result<String, String> {
     }
 }
 
-fn traceroute(target: &str) -> Result<String, String> {
+fn traceroute_command(target: &str) -> Result<Command, String> {
     let target = validate_network_target(target)?;
     #[cfg(target_os = "windows")]
     {
         let mut command = Command::new("tracert");
         command.args(["-d", "-w", "1500", target]);
-        command_text(command)
+        Ok(command)
     }
     #[cfg(not(target_os = "windows"))]
     {
         let mut command = Command::new("traceroute");
         command.args(["-n", "-w", "2", target]);
-        command_text(command)
+        Ok(command)
+    }
+}
+
+fn traceroute(target: &str) -> Result<String, String> {
+    command_text(traceroute_command(target)?)
+}
+
+impl TraceManager {
+    fn start(&self, target: String) -> Result<TraceSnapshot, String> {
+        let command = traceroute_command(&target)?;
+        let id = self.next_id.fetch_add(1, Ordering::Relaxed).saturating_add(1);
+        let snapshot = TraceSnapshot {
+            id,
+            state: "running".to_string(),
+            output: String::new(),
+            error: None,
+        };
+        let control = Arc::new(TraceControl {
+            snapshot: Mutex::new(snapshot.clone()),
+        });
+        self.jobs
+            .lock()
+            .map_err(|_| "traceroute store lock poisoned".to_string())?
+            .insert(id, Arc::clone(&control));
+
+        thread::spawn(move || {
+            let mut command = command;
+            command.stdout(Stdio::piped()).stderr(Stdio::piped());
+            let mut child = match command.spawn() {
+                Ok(child) => child,
+                Err(error) => {
+                    if let Ok(mut snapshot) = control.snapshot.lock() {
+                        snapshot.state = "failed".to_string();
+                        snapshot.error = Some(error.to_string());
+                    }
+                    return;
+                }
+            };
+
+            let stderr_control = Arc::clone(&control);
+            let stderr_thread = child.stderr.take().map(|stderr| {
+                thread::spawn(move || {
+                    for line in BufReader::new(stderr).lines() {
+                        match line {
+                            Ok(line) => append_trace_output(&stderr_control, &line),
+                            Err(error) => {
+                                if let Ok(mut snapshot) = stderr_control.snapshot.lock() {
+                                    snapshot.error = Some(error.to_string());
+                                }
+                                break;
+                            }
+                        }
+                    }
+                })
+            });
+
+            if let Some(stdout) = child.stdout.take() {
+                for line in BufReader::new(stdout).lines() {
+                    match line {
+                        Ok(line) => append_trace_output(&control, &line),
+                        Err(error) => {
+                            if let Ok(mut snapshot) = control.snapshot.lock() {
+                                snapshot.error = Some(error.to_string());
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+
+            let status = child.wait();
+            if let Some(stderr_thread) = stderr_thread {
+                let _ = stderr_thread.join();
+            }
+
+            if let Ok(mut snapshot) = control.snapshot.lock() {
+                match status {
+                    Ok(status) if status.success() => {
+                        snapshot.state = "completed".to_string();
+                    }
+                    Ok(status) => {
+                        snapshot.state = "failed".to_string();
+                        if snapshot.error.is_none() {
+                            snapshot.error = Some(format!("traceroute exited with {status}"));
+                        }
+                    }
+                    Err(error) => {
+                        snapshot.state = "failed".to_string();
+                        snapshot.error = Some(error.to_string());
+                    }
+                }
+            }
+        });
+
+        Ok(snapshot)
+    }
+
+    fn get(&self, id: u64) -> Result<TraceSnapshot, String> {
+        let control = self
+            .jobs
+            .lock()
+            .map_err(|_| "traceroute store lock poisoned".to_string())?
+            .get(&id)
+            .cloned()
+            .ok_or_else(|| format!("traceroute {id} was not found"))?;
+        control
+            .snapshot
+            .lock()
+            .map(|snapshot| snapshot.clone())
+            .map_err(|_| "traceroute state lock poisoned".to_string())
     }
 }
 
@@ -616,6 +754,7 @@ fn dispatch(
     request: &HostRequest,
     host_call: &mut dyn FnMut(&str, Value) -> Result<Value, String>,
     scans: &PortScanManager,
+    traces: &TraceManager,
 ) -> Result<Value, String> {
     match request.method.as_str() {
         "runtime.ping" => Ok(json!({
@@ -697,6 +836,17 @@ fn dispatch(
                 .ok_or_else(|| "network.traceroute requires target".to_string())?;
             Ok(json!({ "output": traceroute(target)? }))
         }
+        "trace.start" => {
+            let target = request.params.get("target").and_then(Value::as_str)
+                .ok_or_else(|| "trace.start requires target".to_string())?;
+            Ok(serde_json::to_value(traces.start(target.to_string())?)
+                .map_err(|error| error.to_string())?)
+        }
+        "trace.status" => {
+            let id = request.params.get("id").and_then(Value::as_u64)
+                .ok_or_else(|| "trace.status requires id".to_string())?;
+            Ok(serde_json::to_value(traces.get(id)?).map_err(|error| error.to_string())?)
+        }
         "port.start" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
@@ -732,6 +882,7 @@ fn run() -> Result<(), String> {
     let mut stdin = io::stdin().lock();
     let mut stdout = io::stdout().lock();
     let scans = PortScanManager::default();
+    let traces = TraceManager::default();
 
     write_frame(
         &mut stdout,
@@ -770,7 +921,7 @@ fn run() -> Result<(), String> {
                 params,
             )
         };
-        let (ok, result, error) = match dispatch(&request, &mut host_call, &scans) {
+        let (ok, result, error) = match dispatch(&request, &mut host_call, &scans, &traces) {
             Ok(result) => (true, result, String::new()),
             Err(error) => (false, Value::Null, error),
         };
