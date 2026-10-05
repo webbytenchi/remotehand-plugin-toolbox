@@ -1,6 +1,14 @@
 # Changelog
 
-## 0.1.1 - Unreleased
+## 0.1.2 - Unreleased
+
+### Improved
+
+- Added consistent Copy actions for reusable output from Password Generator, Lorem Ipsum, Base64, URL Encode/Decode, Hash/Checksum, JSON preview, Ping, Traceroute, and Port Scanner.
+- Traceroute now streams live hop/raw output while the operating-system trace is still running instead of waiting for completion.
+- Preserved the declared Rust 1.85 baseline by pinning `image` to `0.25.8` and refreshing the lockfile to Rust-1.85-compatible dependency versions.
+
+## 0.1.1
 
 ### Improved
 
@@ -8,9 +16,6 @@
 - Removed the redundant `REMOTEHAND PLUGIN` eyebrow and oversized marketing-style launcher heading.
 - Added a compact `All Tools` row while keeping the existing `12 built-in tools` badge.
 - Kept the launcher intentionally single-page: no placeholder Favorites or Settings tabs were added.
-- Added consistent Copy actions for reusable output from Password Generator, Lorem Ipsum, Base64, URL Encode/Decode, Hash/Checksum, JSON preview, Ping, Traceroute, and Port Scanner.
-- Traceroute now streams live hop/raw output while the operating-system trace is still running instead of waiting for completion.
-- Preserved the declared Rust 1.85 baseline by pinning `image` to `0.25.8` and refreshing the lockfile to Rust-1.85-compatible dependency versions.
 
 ## 0.1.0
 
