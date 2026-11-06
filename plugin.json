@@ -17,7 +17,8 @@
     "network.connect",
     "network.inspect",
     "files.open",
-    "files.save"
+    "files.save",
+    "links.open"
   ],
   "contributes": {
     "sidebar": [
