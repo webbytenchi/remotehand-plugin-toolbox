@@ -207,6 +207,10 @@ small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a
     <div id="rdapStatus" class="status"></div>
     <div id="rdapFields" class="panel" style="margin-top:12px" hidden></div>
     <div id="rdapNote" class="status" hidden></div>
+    <div id="rdapOfficial" style="margin-top:12px" hidden>
+      <a id="rdapOfficialLink" href="https://whois.dot.ph/" target="_blank" rel="noopener noreferrer">Open official dotPH WHOIS website ↗</a>
+    </div>
+    <details id="rdapDiagnostics" style="margin-top:12px" hidden><summary>Technical details</summary><pre id="rdapDiagnosticsText" class="output"></pre></details>
     <details id="rdapDetails" style="margin-top:12px" hidden><summary id="rdapRawTitle">Raw registry response</summary><pre id="rdapRaw" class="output tall"></pre></details>
     <small class="note">Registration data may be privacy-redacted or unavailable. Tries HTTPS RDAP first and traditional WHOIS for supported .ph domains; WHOIS uses unencrypted TCP port 43. DNS records are separate.</small>
   </section>
@@ -574,7 +578,11 @@ function initRdap() {
     details=document.getElementById("rdapDetails");
   run.onclick=async()=>{
     run.disabled=true;
-    fields.hidden=true; details.hidden=true; document.getElementById("rdapNote").hidden=true; fields.replaceChildren(); raw.textContent="";
+    fields.hidden=true; details.hidden=true;
+    document.getElementById("rdapNote").hidden=true;
+    document.getElementById("rdapOfficial").hidden=true;
+    document.getElementById("rdapDiagnostics").hidden=true;
+    fields.replaceChildren(); raw.textContent="";
     setStatus("rdapStatus","Looking up registry…");
     try {
       const result=await request("network.rdap",{target:target.value.trim()});
@@ -593,6 +601,13 @@ function initRdap() {
       fields.hidden=false;
       const note=document.getElementById("rdapNote");
       note.textContent=result.note||"";note.hidden=!result.note;
+      const official=document.getElementById("rdapOfficial");
+      // The only accepted link is the fixed, official .ph WHOIS website.
+      official.hidden=result.officialWhoisUrl!=="https://whois.dot.ph/";
+      const diagnostics=document.getElementById("rdapDiagnostics");
+      const diagnosticsText=document.getElementById("rdapDiagnosticsText");
+      diagnosticsText.textContent=result.diagnostics||"";
+      diagnostics.hidden=!result.diagnostics;
       raw.textContent=result.raw||"";details.hidden=!result.raw;
       document.getElementById("rdapRawTitle").textContent=result.format==="text"?"Raw WHOIS response":"Raw RDAP JSON response";
       setStatus("rdapStatus",result.lookupStatus==="unavailable"?"Registration data unavailable for this registry.":"Registry lookup completed.",result.lookupStatus==="unavailable"?"error":"success");
