@@ -4,9 +4,9 @@ RemoteHand Toolbox is a curated collection of practical utilities for RemoteHand
 
 Toolbox intentionally ships a built-in catalog rather than a second plugin system. Specialized features can live as normal RemoteHand plugins; broadly useful utilities can be added to Toolbox in future releases.
 
-## v0.1.2
+## v0.1.3
 
-Toolbox v0.1.2 builds on the normalized Toolbox launcher from v0.1.1, adds consistent copy actions for reusable text output, streams Traceroute results while a trace is still running, and introduces WHOIS / RDAP domain and public IP registration lookups as the thirteenth built-in utility.
+Toolbox v0.1.3 builds on the normalized Toolbox launcher from v0.1.1, adds consistent copy actions for reusable text output, streams Traceroute results while a trace is still running, and introduces WHOIS / RDAP domain and public IP registration lookups as the thirteenth built-in utility.
 
 ### Generators
 
@@ -65,7 +65,7 @@ Every utility is a compact card. Selecting a card opens the tool in-place; **←
 
 ## Permissions
 
-Toolbox v0.1.2 requests:
+Toolbox v0.1.3 requests:
 
 - `network.connect`
 - `network.inspect`
@@ -97,7 +97,7 @@ Toolbox owns:
 - bounded port scanning
 - RDAP domain/IP registry lookup via HTTPS
 
-There is intentionally no user-defined Toolbox tool API in v0.1.2.
+There is intentionally no user-defined Toolbox tool API in v0.1.3.
 
 ## Build on Windows
 
@@ -118,7 +118,7 @@ The build script creates:
 
 ```text
 dist\remotehand-toolbox-windows-x86_64\
-dist\remotehand-toolbox-v0.1.2-windows-x86_64.zip
+dist\remotehand-toolbox-v0.1.3-windows-x86_64.zip
 dist\SHA256SUMS.txt
 ```
 
