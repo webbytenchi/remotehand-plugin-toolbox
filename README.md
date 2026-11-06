@@ -6,7 +6,7 @@ Toolbox intentionally ships a built-in catalog rather than a second plugin syste
 
 ## v0.1.2
 
-Toolbox v0.1.2 builds on the normalized Toolbox launcher from v0.1.1, adds consistent copy actions for reusable text output, and streams Traceroute results while a trace is still running.
+Toolbox v0.1.2 builds on the normalized Toolbox launcher from v0.1.1, adds consistent copy actions for reusable text output, streams Traceroute results while a trace is still running, and introduces WHOIS / RDAP domain and public IP registration lookups as the thirteenth built-in utility.
 
 ### Generators
 
@@ -65,7 +65,7 @@ Every utility is a compact card. Selecting a card opens the tool in-place; **←
 
 ## Permissions
 
-Toolbox v0.1.2 (with the proposed WHOIS/RDAP addition) requests:
+Toolbox v0.1.2 requests:
 
 - `network.connect`
 - `network.inspect`
@@ -118,7 +118,7 @@ The build script creates:
 
 ```text
 dist\remotehand-toolbox-windows-x86_64\
-dist\remotehand-toolbox-v0.1.1-windows-x86_64.zip
+dist\remotehand-toolbox-v0.1.2-windows-x86_64.zip
 dist\SHA256SUMS.txt
 ```
 
