@@ -1048,6 +1048,11 @@ fn dispatch(
                 "output": output_details
             }))
         }
+        "whois.open_official" => {
+            // The panel cannot navigate externally. Ask the permission-gated
+            // host to open the one supported official WHOIS website.
+            host_call("link.open", json!({ "url": "https://whois.dot.ph/" }))
+        }
         "network.rdap" => {
             let target = request.params.get("target").and_then(Value::as_str)
                 .ok_or_else(|| "network.rdap requires target".to_string())?;
