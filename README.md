@@ -24,6 +24,7 @@ Toolbox v0.1.2 builds on the normalized Toolbox launcher from v0.1.1, adds consi
 
 ### Network
 
+- **WHOIS / RDAP** — domain registration and public IP registry lookup through HTTPS RDAP, with structured key fields, nameservers, status, raw JSON and copy. Uses the rdap.net bootstrap redirect service to contact the appropriate registry; historical WHOIS protocol fallback is not included in this first iteration. Windows 11 supplies curl.exe; other supported hosts need curl on PATH. Queries require Internet access and registration fields can be redacted or unavailable. Requests have bounded time, redirects and response size.
 - **Ping** — operating-system ping with raw, copyable results.
 - **Traceroute** — operating-system traceroute/tracert rendered progressively as hops arrive, with live raw output and copy support.
 - **Port Scanner** — single hostname/IP or full IPv4 range, combined with a single port, port range, or comma-separated list. Includes common-port presets and service-name legends. Scans are cancellable, concurrency-bounded, and results can be copied. A hostname resolves to one scan target, preferring IPv4 when available.
@@ -64,7 +65,7 @@ Every utility is a compact card. Selecting a card opens the tool in-place; **←
 
 ## Permissions
 
-Toolbox v0.1.2 requests:
+Toolbox v0.1.2 (with the proposed WHOIS/RDAP addition) requests:
 
 - `network.connect`
 - `network.inspect`
@@ -93,6 +94,7 @@ Toolbox owns:
 - image conversion
 - network commands
 - bounded port scanning
+- RDAP domain/IP registry lookup via HTTPS
 
 There is intentionally no user-defined Toolbox tool API in v0.1.2.
 
