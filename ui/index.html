@@ -73,7 +73,7 @@ small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a
 <main id="homeView" class="view">
   <section class="intro">
     <h2>All Tools</h2>
-    <span class="badge">12 built-in tools</span>
+    <span class="badge">13 built-in tools</span>
   </section>
 
   <section class="category"><h3>Generators</h3></section>
@@ -97,6 +97,7 @@ small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a
     <article class="tool-card" data-tool="ping" tabindex="0"><div class="tool-icon">↔</div><div><h4>Ping</h4><p>Check reachability and latency using the operating system ping utility.</p></div></article>
     <article class="tool-card" data-tool="traceroute" tabindex="0"><div class="tool-icon">⇢</div><div><h4>Traceroute</h4><p>Trace network hops and display the route as a readable hop list.</p></div></article>
     <article class="tool-card" data-tool="ports" tabindex="0"><div class="tool-icon">::</div><div><h4>Port Scanner</h4><p>Scan one host/IP or an IPv4 range against one port or a port range.</p></div></article>
+    <article class="tool-card" data-tool="rdap" tabindex="0"><div class="tool-icon">◎</div><div><h4>WHOIS / RDAP</h4><p>Look up domain registrations and public IP allocations through registry RDAP.</p></div></article>
   </section>
 
   <section class="category"><h3>Image</h3></section>
@@ -199,6 +200,17 @@ small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a
   </section>
 </template>
 
+<template id="rdapTemplate">
+  <section class="panel">
+    <label class="field"><span>Domain or public IP address</span><input id="rdapTarget" type="text" placeholder="example.com or 8.8.8.8" autocomplete="off" spellcheck="false"></label>
+    <div class="actions"><button id="rdapRun" class="primary" type="button">Look up</button><button type="button" data-copy-target="rdapRaw" data-copy-status="rdapStatus">Copy JSON</button></div>
+    <div id="rdapStatus" class="status"></div>
+    <div id="rdapFields" class="panel" style="margin-top:12px" hidden></div>
+    <details id="rdapDetails" style="margin-top:12px" hidden><summary>Raw registry RDAP response</summary><pre id="rdapRaw" class="output tall"></pre></details>
+    <small class="note">Registration data may be privacy-redacted or unavailable. Uses HTTPS RDAP registry queries; DNS records are a separate service.</small>
+  </section>
+</template>
+
 <template id="pingTemplate">
   <section class="panel"><label class="field"><span>Host or IP</span><input id="pingTarget" type="text" placeholder="example.com or 192.168.1.1"></label><div class="actions"><button id="pingRun" class="primary">Ping</button><button type="button" data-copy-target="pingOutput" data-copy-status="pingStatus">Copy output</button></div><div id="pingOutput" class="output tall"></div><div id="pingStatus" class="status"></div></section>
 </template>
@@ -268,6 +280,7 @@ const tools = {
   ping: { title:"Ping", description:"Check target reachability with the operating system ping command.", template:"pingTemplate", init:initPing },
   traceroute: { title:"Traceroute", description:"Trace network hops and display the route in a compact hop view.", template:"tracerouteTemplate", init:initTraceroute },
   ports: { title:"Port Scanner", description:"Scan a single host/IP or IPv4 range against a single port or port range.", template:"portsTemplate", init:initPorts },
+  rdap: { title:"WHOIS / RDAP", description:"Look up domain registration and public IP network allocation via registry RDAP.", template:"rdapTemplate", init:initRdap },
   image: { title:"Image Converter", description:"Convert common image formats and save the result with a native file dialog.", template:"imageTemplate", init:initImage }
 };
 
@@ -554,6 +567,37 @@ function initRegex() {
   bindRunKey(document.getElementById("regexPattern"),()=>document.getElementById("regexRun").click());
   bindRunKey(document.getElementById("regexFlags"),()=>document.getElementById("regexRun").click());
 }
+function initRdap() {
+  const target=document.getElementById("rdapTarget"), run=document.getElementById("rdapRun"),
+    fields=document.getElementById("rdapFields"), raw=document.getElementById("rdapRaw"),
+    details=document.getElementById("rdapDetails");
+  run.onclick=async()=>{
+    run.disabled=true;
+    fields.hidden=true; details.hidden=true; fields.replaceChildren(); raw.textContent="";
+    setStatus("rdapStatus","Looking up registry…");
+    try {
+      const result=await request("network.rdap",{target:target.value.trim()});
+      const add=(name,value)=>{
+        if(!value)return;
+        const line=document.createElement("div");line.className="result-line";
+        const key=document.createElement("strong");key.textContent=name;
+        const text=document.createElement("span");text.textContent=String(value);
+        line.append(key,text);fields.append(line);
+      };
+      add("Lookup",result.target);
+      add("Source",result.source);
+      for(const [key,value] of Object.entries(result.fields||{}))add(key,value);
+      if((result.statuses||[]).length)add("Status",result.statuses.join(", "));
+      if((result.nameservers||[]).length)add("Nameservers",result.nameservers.join(", "));
+      fields.hidden=false;raw.textContent=result.raw||"";details.hidden=false;
+      setStatus("rdapStatus","Registry lookup completed.","success");
+    }catch(error){
+      setStatus("rdapStatus",String(error),"error");
+    }finally{run.disabled=false}
+  };
+  bindRunKey(target,()=>run.click());
+}
+
 function initPing() {
   const target=document.getElementById("pingTarget"),run=document.getElementById("pingRun");
   run.onclick=async()=>{const btn=run;btn.disabled=true;setStatus("pingStatus","Pinging…");document.getElementById("pingOutput").textContent="";try{const r=await request("network.ping",{target:target.value});document.getElementById("pingOutput").textContent=r.output;setStatus("pingStatus","Ping completed.","success")}catch(e){setStatus("pingStatus",String(e),"error")}finally{btn.disabled=false}};
