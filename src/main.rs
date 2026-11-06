@@ -750,6 +750,104 @@ fn pick_file(
     host_call("file.open", json!({ "filters": filters }))
 }
 
+
+fn validate_rdap_target(target: &str) -> Result<(String, &'static str), String> {
+    let target = target.trim();
+    if let Ok(ip) = target.parse::<IpAddr>() {
+        if ip.is_loopback() || ip.is_unspecified() || ip.is_multicast() {
+            return Err("enter a public IP address, not a loopback, multicast or unspecified address".to_string());
+        }
+        return Ok((ip.to_string(), "ip"));
+    }
+    if target.len() > 253 || target.len() < 4 || !target.is_ascii() || !target.contains('.') {
+        return Err("enter a valid domain name (internationalized domains must use punycode) or IP address".to_string());
+    }
+    if !target.split('.').all(|part| {
+        !part.is_empty() && part.len() <= 63 &&
+        !part.starts_with('-') && !part.ends_with('-') &&
+        part.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'-')
+    }) {
+        return Err("domain labels may contain letters, digits and internal hyphens only".to_string());
+    }
+    Ok((target.to_ascii_lowercase(), "domain"))
+}
+
+fn rdap_event(record: &Value, action: &str) -> Option<String> {
+    record.get("events")?.as_array()?.iter().find_map(|event| {
+        (event.get("eventAction")?.as_str()? == action)
+            .then(|| event.get("eventDate")?.as_str().map(str::to_string)).flatten()
+    })
+}
+
+fn rdap_entity_name(record: &Value, role: &str) -> Option<String> {
+    record.get("entities")?.as_array()?.iter().find_map(|entity| {
+        let matches = entity.get("roles")?.as_array()?.iter().any(|r| r.as_str() == Some(role));
+        if !matches { return None; }
+        let array = entity.get("vcardArray")?.get(1)?.as_array()?;
+        array.iter().find_map(|field| {
+            let components = field.as_array()?;
+            (components.first()?.as_str() == Some("fn"))
+                .then(|| components.get(3)?.as_str().map(str::to_string)).flatten()
+        }).or_else(|| entity.get("handle")?.as_str().map(str::to_string))
+    })
+}
+
+fn rdap_lookup(target: &str) -> Result<Value, String> {
+    let (target, kind) = validate_rdap_target(target)?;
+    // The bootstrap resolver directs requests to registries. Never accept a user-supplied URL.
+    let url = format!("https://www.rdap.net/{kind}/{target}");
+    #[cfg(target_os = "windows")]
+    let executable = "curl.exe";
+    #[cfg(not(target_os = "windows"))]
+    let executable = "curl";
+    let output = Command::new(executable)
+        .args([
+            "--silent", "--show-error", "--fail", "--location",
+            "--max-redirs", "4", "--connect-timeout", "4", "--max-time", "12",
+            "--max-filesize", "1048576",
+            "--proto", "=https", "--proto-redir", "=https",
+            "--header", "Accept: application/rdap+json, application/json",
+            &url,
+        ])
+        .output()
+        .map_err(|error| format!("cannot launch built-in curl for RDAP lookup: {error}"))?;
+    if !output.status.success() {
+        let details = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("RDAP lookup unavailable for {target}: {}", details.trim()));
+    }
+    if output.stdout.len() > 1_048_576 {
+        return Err("RDAP response exceeded 1 MiB".to_string());
+    }
+    let record: Value = serde_json::from_slice(&output.stdout)
+        .map_err(|error| format!("registry did not return valid RDAP JSON: {error}"))?;
+    let nameservers: Vec<String> = record.get("nameservers").and_then(Value::as_array)
+        .map(|items| items.iter().filter_map(|item|
+            item.get("ldhName").and_then(Value::as_str).map(str::to_string)
+        ).collect()).unwrap_or_default();
+    let statuses: Vec<String> = record.get("status").and_then(Value::as_array)
+        .map(|items| items.iter().filter_map(|item| item.as_str().map(str::to_string)).collect())
+        .unwrap_or_default();
+    let mut fields = serde_json::Map::new();
+    for (name, value) in [
+        ("Name", record.get("ldhName").or(record.get("name")).and_then(Value::as_str)),
+        ("Handle", record.get("handle").and_then(Value::as_str)),
+    ] {
+        if let Some(value) = value { fields.insert(name.to_string(), json!(value)); }
+    }
+    if let Some(value) = rdap_event(&record, "registration") { fields.insert("Registered".to_string(), json!(value)); }
+    if let Some(value) = rdap_event(&record, "expiration") { fields.insert("Expires".to_string(), json!(value)); }
+    if let Some(value) = rdap_event(&record, "last changed") { fields.insert("Updated".to_string(), json!(value)); }
+    if let Some(value) = rdap_entity_name(&record, "registrar") { fields.insert("Registrar".to_string(), json!(value)); }
+    if let Some(value) = record.get("startAddress").and_then(Value::as_str) { fields.insert("Start IP".to_string(), json!(value)); }
+    if let Some(value) = record.get("endAddress").and_then(Value::as_str) { fields.insert("End IP".to_string(), json!(value)); }
+    Ok(json!({
+        "target": target, "kind": kind, "fields": fields,
+        "statuses": statuses, "nameservers": nameservers,
+        "raw": serde_json::to_string_pretty(&record).map_err(|error| error.to_string())?,
+        "source": "Registry RDAP (via rdap.net bootstrap)"
+    }))
+}
+
 fn dispatch(
     request: &HostRequest,
     host_call: &mut dyn FnMut(&str, Value) -> Result<Value, String>,
@@ -825,6 +923,11 @@ fn dispatch(
                 "input": input_details,
                 "output": output_details
             }))
+        }
+        "network.rdap" => {
+            let target = request.params.get("target").and_then(Value::as_str)
+                .ok_or_else(|| "network.rdap requires target".to_string())?;
+            rdap_lookup(target)
         }
         "network.ping" => {
             let target = request.params.get("target").and_then(Value::as_str)
@@ -999,6 +1102,15 @@ mod tests {
         assert_eq!(image_format("jpeg").unwrap().1, "jpg");
         assert_eq!(image_format("webp").unwrap().1, "webp");
         assert!(image_format("tiff").is_err());
+    }
+
+    #[test]
+    fn rdap_rejects_invalid_targets() {
+        assert_eq!(validate_rdap_target("Example.COM").unwrap(), ("example.com".to_string(), "domain"));
+        assert_eq!(validate_rdap_target("8.8.8.8").unwrap(), ("8.8.8.8".to_string(), "ip"));
+        for invalid in ["localhost", "example.com/evil", "bad domain.com", "https://example.com", "127.0.0.1", "::1"] {
+            assert!(validate_rdap_target(invalid).is_err(), "{invalid}");
+        }
     }
 
     #[test]
