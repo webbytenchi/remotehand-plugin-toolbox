@@ -18,7 +18,7 @@ use std::thread;
 use std::time::Duration;
 
 const PLUGIN_ID: &str = "remotehand.toolbox";
-const PLUGIN_VERSION: &str = "0.1.2";
+const PLUGIN_VERSION: &str = "0.1.3";
 const API_VERSION: u32 = 1;
 const MAX_FRAME_BYTES: usize = 16 * 1024 * 1024;
 const MAX_HASH_TEXT_BYTES: usize = 8 * 1024 * 1024;
@@ -750,6 +750,228 @@ fn pick_file(
     host_call("file.open", json!({ "filters": filters }))
 }
 
+
+fn validate_rdap_target(target: &str) -> Result<(String, &'static str), String> {
+    let target = target.trim();
+    if let Ok(ip) = target.parse::<IpAddr>() {
+        if ip.is_loopback() || ip.is_unspecified() || ip.is_multicast() {
+            return Err("enter a public IP address, not a loopback, multicast or unspecified address".to_string());
+        }
+        return Ok((ip.to_string(), "ip"));
+    }
+    if target.len() > 253 || target.len() < 4 || !target.is_ascii() || !target.contains('.') {
+        return Err("enter a valid domain name (internationalized domains must use punycode) or IP address".to_string());
+    }
+    if !target.split('.').all(|part| {
+        !part.is_empty() && part.len() <= 63 &&
+        !part.starts_with('-') && !part.ends_with('-') &&
+        part.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'-')
+    }) {
+        return Err("domain labels may contain letters, digits and internal hyphens only".to_string());
+    }
+    Ok((target.to_ascii_lowercase(), "domain"))
+}
+
+fn rdap_event(record: &Value, action: &str) -> Option<String> {
+    record.get("events")?.as_array()?.iter().find_map(|event| {
+        (event.get("eventAction")?.as_str()? == action)
+            .then(|| event.get("eventDate")?.as_str().map(str::to_string)).flatten()
+    })
+}
+
+fn rdap_entity_name(record: &Value, role: &str) -> Option<String> {
+    record.get("entities")?.as_array()?.iter().find_map(|entity| {
+        let matches = entity.get("roles")?.as_array()?.iter().any(|r| r.as_str() == Some(role));
+        if !matches { return None; }
+        let array = entity.get("vcardArray")?.get(1)?.as_array()?;
+        array.iter().find_map(|field| {
+            let components = field.as_array()?;
+            (components.first()?.as_str() == Some("fn"))
+                .then(|| components.get(3)?.as_str().map(str::to_string)).flatten()
+        }).or_else(|| entity.get("handle")?.as_str().map(str::to_string))
+    })
+}
+
+fn rdap_lookup(target: &str, kind: &str) -> Result<Value, String> {
+    // The bootstrap resolver directs requests to registries. Never accept a user-supplied URL.
+    let url = format!("https://www.rdap.net/{kind}/{target}");
+    #[cfg(target_os = "windows")]
+    let executable = "curl.exe";
+    #[cfg(not(target_os = "windows"))]
+    let executable = "curl";
+    let output = Command::new(executable)
+        .args([
+            "--silent", "--show-error", "--fail", "--location",
+            "--max-redirs", "4", "--connect-timeout", "4", "--max-time", "12",
+            "--max-filesize", "1048576",
+            "--proto", "=https", "--proto-redir", "=https",
+            "--header", "Accept: application/rdap+json, application/json",
+            &url,
+        ])
+        .output()
+        .map_err(|error| format!("cannot launch built-in curl for RDAP lookup: {error}"))?;
+    if !output.status.success() {
+        let details = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("RDAP lookup unavailable for {target}: {}", details.trim()));
+    }
+    if output.stdout.len() > 1_048_576 {
+        return Err("RDAP response exceeded 1 MiB".to_string());
+    }
+    let record: Value = serde_json::from_slice(&output.stdout)
+        .map_err(|error| format!("registry did not return valid RDAP JSON: {error}"))?;
+    let nameservers: Vec<String> = record.get("nameservers").and_then(Value::as_array)
+        .map(|items| items.iter().filter_map(|item|
+            item.get("ldhName").and_then(Value::as_str).map(str::to_string)
+        ).collect()).unwrap_or_default();
+    let statuses: Vec<String> = record.get("status").and_then(Value::as_array)
+        .map(|items| items.iter().filter_map(|item| item.as_str().map(str::to_string)).collect())
+        .unwrap_or_default();
+    let mut fields = serde_json::Map::new();
+    for (name, value) in [
+        ("Name", record.get("ldhName").or(record.get("name")).and_then(Value::as_str)),
+        ("Handle", record.get("handle").and_then(Value::as_str)),
+    ] {
+        if let Some(value) = value { fields.insert(name.to_string(), json!(value)); }
+    }
+    if let Some(value) = rdap_event(&record, "registration") { fields.insert("Registered".to_string(), json!(value)); }
+    if let Some(value) = rdap_event(&record, "expiration") { fields.insert("Expires".to_string(), json!(value)); }
+    if let Some(value) = rdap_event(&record, "last changed") { fields.insert("Updated".to_string(), json!(value)); }
+    if let Some(value) = rdap_entity_name(&record, "registrar") { fields.insert("Registrar".to_string(), json!(value)); }
+    if let Some(value) = record.get("startAddress").and_then(Value::as_str) { fields.insert("Start IP".to_string(), json!(value)); }
+    if let Some(value) = record.get("endAddress").and_then(Value::as_str) { fields.insert("End IP".to_string(), json!(value)); }
+    Ok(json!({
+        "target": target, "kind": kind, "fields": fields,
+        "statuses": statuses, "nameservers": nameservers,
+        "raw": serde_json::to_string_pretty(&record).map_err(|error| error.to_string())?,
+        "source": "Registry RDAP (via rdap.net bootstrap)"
+    }))
+}
+
+
+const MAX_WHOIS_BYTES: usize = 256 * 1024;
+
+fn whois_fields(raw: &str) -> (serde_json::Map<String, Value>, Vec<String>, Vec<String>) {
+    let mut fields = serde_json::Map::new();
+    let mut statuses = Vec::new();
+    let mut nameservers = Vec::new();
+    for line in raw.lines().take(5000) {
+        let Some((key, value)) = line.split_once(':') else { continue };
+        let key = key.trim().to_ascii_lowercase();
+        let value = value.trim();
+        if value.is_empty() || value.len() > 2048 { continue; }
+        match key.as_str() {
+            "domain name" | "domain" => { fields.insert("Name".into(), json!(value)); }
+            "registrar" => { fields.insert("Registrar".into(), json!(value)); }
+            "creation date" | "created" | "created on" | "registration date" =>
+                { fields.insert("Registered".into(), json!(value)); }
+            "expiration date" | "expiry date" | "registry expiry date" | "expires" =>
+                { fields.insert("Expires".into(), json!(value)); }
+            "updated date" | "last updated" | "last modified" =>
+                { fields.insert("Updated".into(), json!(value)); }
+            "registrant organization" => { fields.insert("Organization".into(), json!(value)); }
+            "domain status" | "status" => {
+                for entry in value.split(',') {
+                    let entry = entry.trim();
+                    if !entry.is_empty() && statuses.len() < 40 { statuses.push(entry.to_string()); }
+                }
+            }
+            "name server" | "nameserver" | "nserver" => {
+                if nameservers.len() < 40 { nameservers.push(value.to_string()); }
+            }
+            _ => {}
+        }
+    }
+    (fields, statuses, nameservers)
+}
+
+fn whois_ph_lookup(target: &str) -> Result<Value, String> {
+    let server = "whois.dot.ph:43";
+    let addresses = server.to_socket_addrs()
+        .map_err(|error| format!("cannot resolve .ph WHOIS service: {error}"))?;
+    let mut stream = None;
+    for address in addresses {
+        if let Ok(socket) = TcpStream::connect_timeout(&address, Duration::from_secs(4)) {
+            stream = Some(socket);
+            break;
+        }
+    }
+    let mut stream = stream.ok_or_else(|| "could not connect to the community-listed .ph WHOIS service on TCP port 43 (network or service may block it)".to_string())?;
+    stream.set_read_timeout(Some(Duration::from_secs(5))).map_err(|e| e.to_string())?;
+    stream.set_write_timeout(Some(Duration::from_secs(5))).map_err(|e| e.to_string())?;
+    stream.write_all(format!("{target}\r\n").as_bytes())
+        .map_err(|error| format!("WHOIS query failed: {error}"))?;
+    let mut buffer = [0u8; 4096];
+    let mut bytes = Vec::new();
+    loop {
+        match stream.read(&mut buffer) {
+            Ok(0) => break,
+            Ok(n) => {
+                if bytes.len() + n > MAX_WHOIS_BYTES {
+                    return Err("WHOIS response exceeded the 256 KiB limit".to_string());
+                }
+                bytes.extend_from_slice(&buffer[..n]);
+            }
+            Err(error) => return Err(format!("WHOIS read failed: {error}")),
+        }
+    }
+    let raw = String::from_utf8_lossy(&bytes).into_owned();
+    let (fields, statuses, nameservers) = whois_fields(&raw);
+    if fields.is_empty() && statuses.is_empty() && nameservers.is_empty() {
+        return Err("the .ph WHOIS service returned no recognizable registration fields; registration status could not be determined".to_string());
+    }
+    Ok(json!({
+        "target": target, "kind": "domain", "fields": fields,
+        "statuses": statuses, "nameservers": nameservers,
+        "raw": raw, "format": "text", "source": "Traditional WHOIS (whois.dot.ph:43; community-listed)",
+        "note": "WHOIS uses unencrypted TCP port 43. This endpoint is community-listed, not published in IANA's .ph delegation. Returned fields may be incomplete."
+    }))
+}
+
+fn ph_lookup_unavailable(target: &str, rdap_error: &str, whois_error: &str) -> Value {
+    json!({
+        "target": target, "kind": "domain", "fields": {"Name": target},
+        "statuses": [], "nameservers": [], "raw": "", "format": "none",
+        "source": "Registry information unavailable",
+        "lookupStatus": "unavailable",
+        "note": "Automated registration lookup is unavailable for this .ph domain. You can try the official dotPH WHOIS website. This does not mean the domain is unregistered.",
+        "officialWhoisUrl": "https://whois.dot.ph/",
+        "diagnostics": format!("RDAP: {rdap_error}\nTraditional WHOIS (whois.dot.ph:43): {whois_error}")
+    })
+}
+
+fn lookup_registry(target: &str) -> Result<Value, String> {
+    let (target, kind) = validate_rdap_target(target)?;
+    match rdap_lookup(&target, kind) {
+        Ok(result) => Ok(result),
+        Err(rdap_error) => {
+            if kind == "domain" && target.ends_with(".gov.ph") {
+                return Ok(json!({
+                    "target": target, "kind": "domain", "fields": {"Name": target, "Registration administrator": "Philippine DICT"},
+                    "statuses": [], "nameservers": [], "raw": "", "format": "none",
+                    "source": "Registry information unavailable",
+                    "note": "RDAP was unavailable. gov.ph subdomains are administered by the Philippine Department of Information and Communications Technology (DICT), not dotPH. No supported public registration lookup was confirmed. See https://dns.gov.ph/ or contact DICT. This does not imply that the domain is unregistered.",
+                    "lookupStatus": "unavailable"
+                }));
+            }
+            if kind == "domain" && target.ends_with(".edu.ph") {
+                return Ok(json!({
+                    "target": target, "kind": "domain", "fields": {"Name": target},
+                    "statuses": [], "nameservers": [], "raw": "", "format": "none",
+                    "source": "Registry information unavailable",
+                    "note": "RDAP was unavailable. edu.ph subdomains are administered separately from dotPH; a supported public registration-data endpoint has not been confirmed. This does not mean the domain is unregistered.",
+                    "lookupStatus": "unavailable"
+                }));
+            }
+            if kind == "domain" && target.ends_with(".ph") {
+                return match whois_ph_lookup(&target) {
+                    Ok(result) => Ok(result),
+                    Err(whois_error) => Ok(ph_lookup_unavailable(&target, &rdap_error, &whois_error)),
+                };
+            }
+            Err(format!("Registry RDAP lookup unavailable for {target}: {rdap_error}. No verified traditional WHOIS fallback is configured for this registry; this does not mean the domain is unregistered."))
+        }
+    }
+}
 fn dispatch(
     request: &HostRequest,
     host_call: &mut dyn FnMut(&str, Value) -> Result<Value, String>,
@@ -825,6 +1047,16 @@ fn dispatch(
                 "input": input_details,
                 "output": output_details
             }))
+        }
+        "whois.open_official" => {
+            // The panel cannot navigate externally. Ask the permission-gated
+            // host to open the one supported official WHOIS website.
+            host_call("link.open", json!({ "url": "https://whois.dot.ph/" }))
+        }
+        "network.rdap" => {
+            let target = request.params.get("target").and_then(Value::as_str)
+                .ok_or_else(|| "network.rdap requires target".to_string())?;
+            lookup_registry(target)
         }
         "network.ping" => {
             let target = request.params.get("target").and_then(Value::as_str)
@@ -999,6 +1231,35 @@ mod tests {
         assert_eq!(image_format("jpeg").unwrap().1, "jpg");
         assert_eq!(image_format("webp").unwrap().1, "webp");
         assert!(image_format("tiff").is_err());
+    }
+
+    #[test]
+    fn rdap_rejects_invalid_targets() {
+        assert_eq!(validate_rdap_target("Example.COM").unwrap(), ("example.com".to_string(), "domain"));
+        assert_eq!(validate_rdap_target("8.8.8.8").unwrap(), ("8.8.8.8".to_string(), "ip"));
+        for invalid in ["localhost", "example.com/evil", "bad domain.com", "https://example.com", "127.0.0.1", "::1"] {
+            assert!(validate_rdap_target(invalid).is_err(), "{invalid}");
+        }
+    }
+
+    #[test]
+    fn parses_whois_registration_fields() {
+        let raw = "Domain Name: example.ph\nRegistrar: Example Registrar\nCreation Date: 2020-01-01\nExpiration Date: 2030-01-01\nName Server: ns1.example.ph\nName Server: ns2.example.ph\nStatus: clientTransferProhibited\n";
+        let (fields, statuses, nameservers) = whois_fields(raw);
+        assert_eq!(fields["Name"], "example.ph");
+        assert_eq!(fields["Registrar"], "Example Registrar");
+        assert_eq!(nameservers.len(), 2);
+        assert_eq!(statuses, vec!["clientTransferProhibited"]);
+    }
+
+    #[test]
+    fn ph_registry_unavailable_has_safe_official_link_and_diagnostics() {
+        let result = ph_lookup_unavailable("dot.ph", "RDAP 404", "connection refused");
+        assert_eq!(result["lookupStatus"], "unavailable");
+        assert_eq!(result["officialWhoisUrl"], "https://whois.dot.ph/");
+        assert_eq!(result["fields"]["Name"], "dot.ph");
+        assert!(result["diagnostics"].as_str().unwrap().contains("connection refused"));
+        assert_eq!(result["raw"], "");
     }
 
     #[test]

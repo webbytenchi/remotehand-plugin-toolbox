@@ -4,9 +4,9 @@ RemoteHand Toolbox is a curated collection of practical utilities for RemoteHand
 
 Toolbox intentionally ships a built-in catalog rather than a second plugin system. Specialized features can live as normal RemoteHand plugins; broadly useful utilities can be added to Toolbox in future releases.
 
-## v0.1.2
+## v0.1.3
 
-Toolbox v0.1.2 builds on the normalized Toolbox launcher from v0.1.1, adds consistent copy actions for reusable text output, and streams Traceroute results while a trace is still running.
+Toolbox v0.1.3 adds WHOIS / RDAP domain and public IP registration lookups as the thirteenth built-in utility. It retains the normalized launcher from v0.1.1 and the copy actions and progressive Traceroute results introduced in v0.1.2.
 
 ### Generators
 
@@ -24,6 +24,7 @@ Toolbox v0.1.2 builds on the normalized Toolbox launcher from v0.1.1, adds consi
 
 ### Network
 
+- **WHOIS / RDAP** — domain registration and public IP registry lookup through HTTPS RDAP (rdap.net bootstrap), with structured key fields, nameservers, statuses, raw response and copy. Where RDAP fails, ordinary .ph domains attempt traditional port-43 WHOIS via community-listed whois.dot.ph; this server is not listed by IANA and may be unavailable. .gov.ph is independently administered by DICT, and .edu.ph is also separately administered; neither is sent to dotPH, and an unavailable-registry explanation is shown instead of a misleading 404. Windows 11 supplies curl.exe; other hosts need curl. Traditional WHOIS is unencrypted and requires outbound TCP 43; both methods limit time and output size. If both automated methods are unavailable for an ordinary .ph domain, Toolbox displays a concise explanation, an external link to the official https://whois.dot.ph/ lookup page, and expandable technical diagnostics. It does not scrape the website or imply that missing registry data means the domain is unregistered. The official WHOIS button uses the RemoteHand Plugin API v1 `link.open` host method, requiring the `links.open` permission, to open the site in the user's default browser. Direct HTML external navigation from the sandboxed panel is intentionally unsupported. No universal WHOIS fallback is claimed. Registration information may be redacted or absent.
 - **Ping** — operating-system ping with raw, copyable results.
 - **Traceroute** — operating-system traceroute/tracert rendered progressively as hops arrive, with live raw output and copy support.
 - **Port Scanner** — single hostname/IP or full IPv4 range, combined with a single port, port range, or comma-separated list. Includes common-port presets and service-name legends. Scans are cancellable, concurrency-bounded, and results can be copied. A hostname resolves to one scan target, preferring IPv4 when available.
@@ -64,12 +65,13 @@ Every utility is a compact card. Selecting a card opens the tool in-place; **←
 
 ## Permissions
 
-Toolbox v0.1.2 requests:
+Toolbox v0.1.3 requests:
 
 - `network.connect`
 - `network.inspect`
 - `files.open`
 - `files.save`
+- `links.open` (needed for the official dotPH WHOIS website button)
 
 Password generation, Base64, URL conversion, timestamp conversion, JSON formatting, and regex testing execute entirely in the panel and require no plugin permission.
 
@@ -93,8 +95,9 @@ Toolbox owns:
 - image conversion
 - network commands
 - bounded port scanning
+- RDAP domain/IP registry lookup via HTTPS
 
-There is intentionally no user-defined Toolbox tool API in v0.1.2.
+There is intentionally no user-defined Toolbox tool API in v0.1.3.
 
 ## Build on Windows
 
@@ -115,7 +118,7 @@ The build script creates:
 
 ```text
 dist\remotehand-toolbox-windows-x86_64\
-dist\remotehand-toolbox-v0.1.1-windows-x86_64.zip
+dist\remotehand-toolbox-v0.1.3-windows-x86_64.zip
 dist\SHA256SUMS.txt
 ```
 
