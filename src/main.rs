@@ -927,6 +927,18 @@ fn whois_ph_lookup(target: &str) -> Result<Value, String> {
     }))
 }
 
+fn ph_lookup_unavailable(target: &str, rdap_error: &str, whois_error: &str) -> Value {
+    json!({
+        "target": target, "kind": "domain", "fields": {"Name": target},
+        "statuses": [], "nameservers": [], "raw": "", "format": "none",
+        "source": "Registry information unavailable",
+        "lookupStatus": "unavailable",
+        "note": "Automated registration lookup is unavailable for this .ph domain. You can try the official dotPH WHOIS website. This does not mean the domain is unregistered.",
+        "officialWhoisUrl": "https://whois.dot.ph/",
+        "diagnostics": format!("RDAP: {rdap_error}\\nTraditional WHOIS (whois.dot.ph:43): {whois_error}")
+    })
+}
+
 fn lookup_registry(target: &str) -> Result<Value, String> {
     let (target, kind) = validate_rdap_target(target)?;
     match rdap_lookup(&target, kind) {
@@ -951,9 +963,10 @@ fn lookup_registry(target: &str) -> Result<Value, String> {
                 }));
             }
             if kind == "domain" && target.ends_with(".ph") {
-                return whois_ph_lookup(&target).map_err(|whois_error| {
-                    format!("RDAP unavailable; traditional .ph WHOIS fallback also unavailable: {whois_error}. This does not establish whether the domain is registered.")
-                });
+                return match whois_ph_lookup(&target) {
+                    Ok(result) => Ok(result),
+                    Err(whois_error) => Ok(ph_lookup_unavailable(&target, &rdap_error, &whois_error)),
+                };
             }
             Err(format!("Registry RDAP lookup unavailable for {target}: {rdap_error}. No verified traditional WHOIS fallback is configured for this registry; this does not mean the domain is unregistered."))
         }
@@ -1232,6 +1245,16 @@ mod tests {
         assert_eq!(fields["Registrar"], "Example Registrar");
         assert_eq!(nameservers.len(), 2);
         assert_eq!(statuses, vec!["clientTransferProhibited"]);
+    }
+
+    #[test]
+    fn ph_registry_unavailable_has_safe_official_link_and_diagnostics() {
+        let result = ph_lookup_unavailable("dot.ph", "RDAP 404", "connection refused");
+        assert_eq!(result["lookupStatus"], "unavailable");
+        assert_eq!(result["officialWhoisUrl"], "https://whois.dot.ph/");
+        assert_eq!(result["fields"]["Name"], "dot.ph");
+        assert!(result["diagnostics"].as_str().unwrap().contains("connection refused"));
+        assert_eq!(result["raw"], "");
     }
 
     #[test]
