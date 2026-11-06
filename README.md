@@ -6,7 +6,7 @@ Toolbox intentionally ships a built-in catalog rather than a second plugin syste
 
 ## v0.1.3
 
-Toolbox v0.1.3 builds on the normalized Toolbox launcher from v0.1.1, adds consistent copy actions for reusable text output, streams Traceroute results while a trace is still running, and introduces WHOIS / RDAP domain and public IP registration lookups as the thirteenth built-in utility.
+Toolbox v0.1.3 adds WHOIS / RDAP domain and public IP registration lookups as the thirteenth built-in utility. It retains the normalized launcher from v0.1.1 and the copy actions and progressive Traceroute results introduced in v0.1.2.
 
 ### Generators
 
