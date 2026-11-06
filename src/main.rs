@@ -935,7 +935,7 @@ fn ph_lookup_unavailable(target: &str, rdap_error: &str, whois_error: &str) -> V
         "lookupStatus": "unavailable",
         "note": "Automated registration lookup is unavailable for this .ph domain. You can try the official dotPH WHOIS website. This does not mean the domain is unregistered.",
         "officialWhoisUrl": "https://whois.dot.ph/",
-        "diagnostics": format!("RDAP: {rdap_error}\\nTraditional WHOIS (whois.dot.ph:43): {whois_error}")
+        "diagnostics": format!("RDAP: {rdap_error}\nTraditional WHOIS (whois.dot.ph:43): {whois_error}")
     })
 }
 
