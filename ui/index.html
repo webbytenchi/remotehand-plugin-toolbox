@@ -208,7 +208,7 @@ small.note{display:block;margin-top:8px;color:var(--remotehand-muted-text,#8795a
     <div id="rdapFields" class="panel" style="margin-top:12px" hidden></div>
     <div id="rdapNote" class="status" hidden></div>
     <div id="rdapOfficial" style="margin-top:12px" hidden>
-      <a id="rdapOfficialLink" href="https://whois.dot.ph/" target="_blank" rel="noopener noreferrer">Open official dotPH WHOIS website ↗</a>
+      <button id="rdapOfficialLink" type="button">Open official dotPH WHOIS website ↗</button>
     </div>
     <details id="rdapDiagnostics" style="margin-top:12px" hidden><summary>Technical details</summary><pre id="rdapDiagnosticsText" class="output"></pre></details>
     <details id="rdapDetails" style="margin-top:12px" hidden><summary id="rdapRawTitle">Raw registry response</summary><pre id="rdapRaw" class="output tall"></pre></details>
@@ -614,6 +614,17 @@ function initRdap() {
     }catch(error){
       setStatus("rdapStatus",String(error),"error");
     }finally{run.disabled=false}
+  };
+  const officialLink=document.getElementById("rdapOfficialLink");
+  officialLink.onclick=async()=>{
+    officialLink.disabled=true;
+    try {
+      const result=await request("link.open",{url:"https://whois.dot.ph/"});
+      if(!result || result.opened!==true)throw new Error("RemoteHand did not confirm opening the browser.");
+      setStatus("rdapStatus","Opened official dotPH WHOIS website in your default browser.","success");
+    } catch(error) {
+      setStatus("rdapStatus","Could not open the official WHOIS page: "+String(error),"error");
+    } finally { officialLink.disabled=false; }
   };
   bindRunKey(target,()=>run.click());
 }
